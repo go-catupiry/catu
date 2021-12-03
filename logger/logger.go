@@ -8,8 +8,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Init(cfg configuration.Configer) {
-	GO_ENV := cfg.Get("GO_ENV")
+func Init() {
+	GO_ENV := configuration.GetEnv("GO_ENV", "development")
 	if GO_ENV != "development" {
 		hostname, _ := os.Hostname()
 		// Log as GELF instead of the default ASCII formatter.
@@ -28,7 +28,7 @@ func Init(cfg configuration.Configer) {
 	// Can be any io.Writer, see below for File example
 	logrus.SetOutput(os.Stdout)
 
-	LOG_LV := cfg.Get("LOG_LV")
+	LOG_LV := configuration.GetEnv("LOG_LV", "")
 
 	switch LOG_LV {
 	case "verbose":
