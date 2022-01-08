@@ -1,4 +1,4 @@
-package utils_test
+package helpers_test
 
 // import (
 // 	"github.com/DATA-DOG/go-sqlmock"

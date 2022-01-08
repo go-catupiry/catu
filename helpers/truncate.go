@@ -1,4 +1,4 @@
-package utils
+package helpers
 
 // Copyright 2016 The Hugo Authors. All rights reserved.
 //

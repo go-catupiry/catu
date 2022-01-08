@@ -1,4 +1,4 @@
-package utils_test
+package helpers_test
 
 // import (
 // 	"github.com/brianvoe/gofakeit/v6"
