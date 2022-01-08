@@ -3,18 +3,30 @@ package catu
 import (
 	"encoding/json"
 	"html/template"
+	"log"
+	"os"
 	"time"
 
 	"github.com/go-catupiry/catu/configuration"
-	"github.com/go-catupiry/catu/utils"
+	"github.com/go-catupiry/catu/helpers"
+	"github.com/go-catupiry/catu/logger"
 	"github.com/go-playground/validator/v10"
+	"github.com/gookit/event"
 	"github.com/labstack/echo/v4"
+	"gorm.io/driver/mysql"
+	gorm_logger "gorm.io/gorm/logger"
+
+	"gorm.io/gorm"
 )
 
 type App struct {
 	InitTime time.Time
 
+	Events *event.Manager
+
 	Configuration configuration.Configer
+
+	DB *gorm.DB
 
 	Plugins map[string]Pluginer
 
@@ -41,46 +53,14 @@ func (r *App) GetTemplates() *template.Template {
 	return r.templates
 }
 
-// -- Plugin lifecircle methods:
-
-func (r *App) BeforeBindMiddlewares() {
-	for i := range r.Plugins {
-		r.Plugins[i].BeforeBindMiddlewares(r)
-	}
-}
-
-func (r *App) BindMiddlewares() {
-	for i := range r.Plugins {
-		r.Plugins[i].BindMiddlewares(r)
-	}
-}
-
-func (r *App) AfterBindMiddlewares() {
-	for i := range r.Plugins {
-		r.Plugins[i].AfterBindMiddlewares(r)
-	}
-}
-
-func (r *App) BeforeBindRoutes() {
-	for i := range r.Plugins {
-		r.Plugins[i].BeforeBindRoutes(r)
-	}
-}
-
-func (r *App) BindRoutes() {
-	for i := range r.Plugins {
-		r.Plugins[i].BindRoutes(r)
-	}
-}
-
-func (r *App) AfterBindRoutes() {
-	for i := range r.Plugins {
-		r.Plugins[i].AfterBindRoutes(r)
-	}
-}
-
 func (r *App) Bootstrap() error {
 	json.Unmarshal([]byte(r.Configuration.Get("Roles")), &r.RolesList)
+
+	r.Events.MustTrigger("configuration", event.M{"app": r})
+	r.Events.MustTrigger("bindMiddlewares", event.M{"app": r})
+	r.Events.MustTrigger("bindRoutes", event.M{"app": r})
+	r.Events.MustTrigger("setResponseFormats", event.M{"app": r})
+	r.Events.MustTrigger("bootstrap", event.M{"app": r})
 
 	return nil
 }
@@ -104,11 +84,44 @@ func (r *App) SetAPIRouterGroup(name, path string) *echo.Group {
 	return r.apiRouterGroups[name]
 }
 
-func NewApp() *App {
+func (r *App) InitDatabase(name, path string) {
+	dbURI := r.Configuration.Get("DB_URI")
+	dbSlowThreshold := r.Configuration.GetInt64("DB_SLOW_THRESHOLD")
+	logQuery := r.Configuration.Get("LOG_QUERY")
+
+	dsn := dbURI + "?charset=utf8mb4&parseTime=True&loc=Local"
+
+	dbLogger := gorm_logger.New(log.New(os.Stdout, "\r\n", log.LstdFlags), gorm_logger.Config{
+		SlowThreshold:             time.Duration(dbSlowThreshold) * time.Millisecond,
+		LogLevel:                  gorm_logger.Warn,
+		IgnoreRecordNotFoundError: true,
+		Colorful:                  true,
+	})
+
+	logg := dbLogger.LogMode(gorm_logger.Warn)
+
+	if logQuery != "" {
+		logg = dbLogger.LogMode(gorm_logger.Info)
+	}
+
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+		Logger: logg,
+	})
+
+	if err != nil {
+		log.Panicln("Error on connect in database", err)
+	}
+
+	r.DB = db
+}
+
+func newApp() *App {
 	var app App
 
+	app.Events = event.NewManager("app")
 	app.RolesString = configuration.Roles
 
+	logger.Init()
 	app.Configuration = configuration.NewCfg()
 	app.routerGroups = make(map[string]*echo.Group)
 	app.apiRouterGroups = make(map[string]*echo.Group)
@@ -122,7 +135,7 @@ func NewApp() *App {
 	apiRouterGroup := app.SetRouterGroup("api", "/api")
 	apiRouterGroup.GET("", HealthCheck)
 
-	app.router.Validator = &utils.CustomValidator{Validator: validator.New()}
+	app.router.Validator = &helpers.CustomValidator{Validator: validator.New()}
 
 	app.router.Renderer = &TemplateRenderer{
 		templates: app.GetTemplates(),

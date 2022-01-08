@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-catupiry/catu/utils"
+	"github.com/go-catupiry/catu/helpers"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 )
@@ -76,7 +76,7 @@ func (r *AppContext) RenderPagination(name string) string {
 
 // Add a body class string checking if is unique
 func (r *AppContext) AddBodyClass(class string) {
-	if utils.SliceContains(r.BodyClass, class) {
+	if helpers.SliceContains(r.BodyClass, class) {
 		return
 	}
 
@@ -85,7 +85,7 @@ func (r *AppContext) AddBodyClass(class string) {
 
 // Remove a body class string checking if is unique
 func (r *AppContext) RemoveBodyClass(class string) {
-	if !utils.SliceContains(r.BodyClass, class) {
+	if !helpers.SliceContains(r.BodyClass, class) {
 		return
 	}
 

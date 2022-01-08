@@ -1,10 +1,18 @@
 package catu
 
-import "github.com/go-catupiry/catu/logger"
+import "gorm.io/gorm"
 
-// Init global features like logrus configuration
-func Init() error {
-	logger.Init()
+var appInstance *App
 
-	return nil
+func Init() *App {
+	appInstance = newApp()
+	return appInstance
+}
+
+func GetApp() *App {
+	return appInstance
+}
+
+func GetDefaultDatabaseConnection() *gorm.DB {
+	return appInstance.DB
 }
