@@ -6,6 +6,8 @@ var appInstance *App
 
 func Init() *App {
 	appInstance = newApp()
+
+	appInstance.RegisterPlugin(&Plugin{Name: "core"})
 	return appInstance
 }
 

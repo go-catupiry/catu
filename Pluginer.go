@@ -2,6 +2,7 @@ package catu
 
 type Pluginer interface {
 	Init(app *App) error
+	GetName() string
 
 	// BeforeBindMiddlewares(app *App) error
 	// BindMiddlewares(app *App) error

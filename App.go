@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"html/template"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -13,6 +14,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gookit/event"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	gorm_logger "gorm.io/gorm/logger"
 
@@ -41,8 +44,12 @@ type App struct {
 	templates *template.Template
 }
 
-func (r *App) RegisterPlugin(name string, p Pluginer) {
-	r.Plugins[name] = p
+func (r *App) RegisterPlugin(p Pluginer) {
+	if p.GetName() == "" {
+		panic("Plugin.RegisterPlugin Name should be returned from GetName method")
+	}
+
+	r.Plugins[p.GetName()] = p
 }
 
 func (r *App) GetRouter() *echo.Echo {
@@ -54,7 +61,18 @@ func (r *App) GetTemplates() *template.Template {
 }
 
 func (r *App) Bootstrap() error {
+	var err error
+
+	logrus.Debug("Bootstrap running")
+	// default roles and permissions, override it on your app
 	json.Unmarshal([]byte(r.Configuration.Get("Roles")), &r.RolesList)
+
+	for _, p := range r.Plugins {
+		err = p.Init(r)
+		if err != nil {
+			return errors.Wrap(err, "App.Bootstrap | Error on run plugin init "+p.GetName())
+		}
+	}
 
 	r.Events.MustTrigger("configuration", event.M{"app": r})
 	r.Events.MustTrigger("bindMiddlewares", event.M{"app": r})
@@ -66,6 +84,13 @@ func (r *App) Bootstrap() error {
 }
 
 func (r *App) StartHTTPServer() error {
+	port := r.Configuration.Get("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	logrus.Info("Server listening on port " + port)
+	http.ListenAndServe(":"+port, r.GetRouter())
 
 	return nil
 }
