@@ -1,4 +1,4 @@
-package catu
+package pagination
 
 import (
 	"encoding/json"

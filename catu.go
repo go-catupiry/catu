@@ -7,7 +7,7 @@ var appInstance *App
 func Init() *App {
 	appInstance = newApp()
 
-	appInstance.RegisterPlugin(&Plugin{Name: "core"})
+	appInstance.RegisterPlugin(&Plugin{Name: "catu"})
 	return appInstance
 }
 

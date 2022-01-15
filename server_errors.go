@@ -72,13 +72,10 @@ func notFoundErrorHandler(err error, c echo.Context) error {
 	ctx := c.Get("app").(*AppContext)
 
 	switch ctx.ResponseContentType {
-	case "application/json":
-		c.JSON(http.StatusNotFound, make(map[string]string))
-		return nil
 	case "application/vnd.api+json":
 		c.JSON(http.StatusNotFound, make(map[string]string))
 		return nil
-	default:
+	case "text/html":
 		ctx.Title = "Não encontrado"
 
 		if err := c.Render(http.StatusNotFound, "site/404", &TemplateCTX{
@@ -86,10 +83,11 @@ func notFoundErrorHandler(err error, c echo.Context) error {
 		}); err != nil {
 			c.Logger().Error(err)
 		}
-
+		return nil
+	default:
+		c.JSON(http.StatusNotFound, make(map[string]string))
 		return nil
 	}
-
 }
 
 func internalServerErrorHandler(err error, c echo.Context) error {

@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Masterminds/sprig"
 	"github.com/go-catupiry/catu/configuration"
 	"github.com/go-catupiry/catu/helpers"
 	"github.com/go-catupiry/catu/logger"
@@ -41,7 +42,8 @@ type App struct {
 	RolesString string
 	RolesList   map[string]Role
 
-	templates *template.Template
+	templates         *template.Template
+	templateFunctions template.FuncMap
 }
 
 func (r *App) RegisterPlugin(p Pluginer) {
@@ -78,6 +80,17 @@ func (r *App) Bootstrap() error {
 	r.Events.MustTrigger("bindMiddlewares", event.M{"app": r})
 	r.Events.MustTrigger("bindRoutes", event.M{"app": r})
 	r.Events.MustTrigger("setResponseFormats", event.M{"app": r})
+	r.Events.MustTrigger("setTemplateFunctions", event.M{"app": r})
+
+	logrus.WithFields(logrus.Fields{
+		"count": len(r.templateFunctions),
+	}).Debug("catu.App.Bootstrap template functions loaded")
+
+	err = r.LoadTemplates()
+	if err != nil {
+		panic(errors.Wrap(err, "App.Bootstrap Error on LoadTemplates"))
+	}
+
 	r.Events.MustTrigger("bootstrap", event.M{"app": r})
 
 	return nil
@@ -102,10 +115,18 @@ func (r *App) SetRouterGroup(name, path string) *echo.Group {
 	return r.routerGroups[name]
 }
 
+func (r *App) GetRouterGroup(name string) *echo.Group {
+	return r.routerGroups[name]
+}
+
 func (r *App) SetAPIRouterGroup(name, path string) *echo.Group {
 	if r.apiRouterGroups[name] == nil {
 		r.apiRouterGroups[name] = r.routerGroups["api"].Group(path)
 	}
+	return r.apiRouterGroups[name]
+}
+
+func (r *App) GetAPIRouterGroup(name string) *echo.Group {
 	return r.apiRouterGroups[name]
 }
 
@@ -140,6 +161,42 @@ func (r *App) InitDatabase(name, path string) {
 	r.DB = db
 }
 
+func (r *App) SetTemplateFunction(name string, f interface{}) {
+	r.templateFunctions[name] = f
+}
+
+func (r *App) LoadTemplates() error {
+	rootDir := r.Configuration.Get("TEMPLATE_FOLDER")
+	disableTemplating := r.Configuration.GetBool("TEMPLATE_DISABLE")
+
+	if disableTemplating {
+		return nil
+	}
+
+	if rootDir == "" {
+		// defalt template folder in app:
+		rootDir = "./src/templates"
+	}
+
+	tpls, err := findAndParseTemplates(rootDir, r.templateFunctions)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"error":   err,
+			"rootDir": rootDir,
+		}).Error("catu.App.LoadTemplates Error on parse templates")
+		r.templates = tpls
+		return err
+	}
+
+	r.templates = tpls
+
+	logrus.WithFields(logrus.Fields{
+		"count": len(r.templates.Templates()),
+	}).Debug("catu.App.ParseTemplates templates loaded")
+
+	return nil
+}
+
 func newApp() *App {
 	var app App
 
@@ -152,7 +209,11 @@ func newApp() *App {
 	app.apiRouterGroups = make(map[string]*echo.Group)
 
 	app.router = echo.New()
+	app.router.GET("/health", HealthCheck)
+
 	app.Plugins = make(map[string]Pluginer)
+
+	app.templates = &template.Template{}
 
 	app.SetRouterGroup("main", "/")
 	app.SetRouterGroup("public", "/public")
@@ -162,6 +223,8 @@ func newApp() *App {
 
 	app.router.Validator = &helpers.CustomValidator{Validator: validator.New()}
 
+	app.templateFunctions = sprig.FuncMap()
+
 	app.router.Renderer = &TemplateRenderer{
 		templates: app.GetTemplates(),
 	}
@@ -169,11 +232,4 @@ func newApp() *App {
 	app.router.HTTPErrorHandler = CustomHTTPErrorHandler
 
 	return &app
-}
-
-type Apper interface {
-	GetApp() *App
-	RegisterPlugin(p interface{}) error
-	Init() error
-	BindRoutes() error
 }

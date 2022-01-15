@@ -1,4 +1,4 @@
-package http_server
+package catu
 
 import (
 	"net/http"
@@ -7,7 +7,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/www.monitordomercado.com.br/mm/src/app"
 )
 
 func TestContentNegotiationMiddleware(t *testing.T) {
@@ -21,7 +20,7 @@ func TestContentNegotiationMiddleware(t *testing.T) {
 	}
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
-	ctx := app.GetRequestAppContext(c)
+	ctx := GetRequestAppContext(c)
 	c.Set("app", &ctx)
 
 	t.Run("Should start with text/html", func(t *testing.T) {

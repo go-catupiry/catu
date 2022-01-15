@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-catupiry/catu/helpers"
+	"github.com/go-catupiry/catu/pagination"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 )
@@ -30,7 +31,7 @@ type AppContext struct {
 	Content             template.HTML
 	ContentData         map[string]interface{}
 	Query               Query
-	Pager               *Pager
+	Pager               *pagination.Pager
 	MetaTags            HTMLMetaTags
 	ResponseContentType string
 
@@ -155,7 +156,7 @@ func NewAppContext() AppContext {
 		// ENV:                 configuration.CFGs.GO_ENV,
 	}
 
-	ctx.Pager = NewPager()
+	ctx.Pager = pagination.NewPager()
 	// ctx.Pager.Limit, _ = strconv.ParseInt(configuration.CFGs.PAGER_LIMIT, 10, 64)
 	ctx.ContentData = map[string]interface{}{}
 
@@ -182,19 +183,19 @@ func GetRequestAppContext(c echo.Context) AppContext {
 
 	for key, param := range rawParams {
 		// get limit with max value for security:
-		if key == "limit" && len(param) == 1 {
-			// queryLimit, err := strconv.ParseInt(param[0], 10, 64)
-			// if err != nil {
-			// 	logrus.WithFields(logrus.Fields{
-			// 		"key":   key,
-			// 		"param": param,
-			// 	}).Error("GetRequestAppContext invalid query param limit")
-			// 	continue
-			// }
-			// // if queryLimit > 0 && queryLimit < limitMax {
-			// // 	ctx.Pager.Limit = queryLimit
-			// // }
-		}
+		// if key == "limit" && len(param) == 1 {
+		// 	// queryLimit, err := strconv.ParseInt(param[0], 10, 64)
+		// 	// if err != nil {
+		// 	// 	logrus.WithFields(logrus.Fields{
+		// 	// 		"key":   key,
+		// 	// 		"param": param,
+		// 	// 	}).Error("GetRequestAppContext invalid query param limit")
+		// 	// 	continue
+		// 	// }
+		// 	// // if queryLimit > 0 && queryLimit < limitMax {
+		// 	// // 	ctx.Pager.Limit = queryLimit
+		// 	// // }
+		// }
 
 		if key == "page" && len(param) == 1 {
 			page, _ := strconv.ParseInt(param[0], 10, 64)

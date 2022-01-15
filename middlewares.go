@@ -1,20 +1,18 @@
-package http_server
+package catu
 
 import (
-	"log"
-	"net/http"
 	"strings"
 
-	"github.com/go-catupiry/catu"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"
-	"gitlab.com/www.monitordomercado.com.br/mm/src/configuration"
-	"gitlab.com/www.monitordomercado.com.br/mm/src/models"
 )
 
 // BindMiddlewares - Bind middlewares in order
-func BindMiddlewares() {
+func BindMiddlewares(app *App, p *Plugin) {
+	goEnv := app.Configuration.Get("GO_ENV")
+
+	router := app.GetRouter()
 	// router.Use(mw.Recover())
 	router.Use(middleware.Gzip())
 
@@ -23,24 +21,24 @@ func BindMiddlewares() {
 		MaxAge:           18000, // seccounds
 	}))
 
-	if configuration.CFGs.GO_ENV == "dev" {
+	if goEnv == "dev" {
 		router.Debug = true
 	}
 
 	router.Pre(initAppCtx())
 	router.Pre(extensionMiddleware())
 	router.Pre(contentNegotiationMiddleware())
-	router.Pre(urlAliasMiddleware())
+	// router.Pre(urlAliasMiddleware())
 
-	routerGroups["main"].Use(oauth2AuthenticationMiddleware())
-	routerGroups["main"].Use(sessionAuthenticationMiddleware())
-	routerGroups["api"].Use(oauth2AuthenticationMiddleware())
+	// app.GetRouterGroup("main").Use(oauth2AuthenticationMiddleware())
+	// app.GetRouterGroup("main").Use(sessionAuthenticationMiddleware())
+	// app.GetRouterGroup("api").Use(oauth2AuthenticationMiddleware())
 }
 
 func initAppCtx() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			ctx := app.GetRequestAppContext(c)
+			ctx := GetRequestAppContext(c)
 			c.Set("app", &ctx)
 
 			logrus.WithFields(logrus.Fields{
@@ -58,84 +56,84 @@ func isPublicRoute(url string) bool {
 	return strings.HasPrefix(url, "/health") || strings.HasPrefix(url, "/public")
 }
 
-// urlAliasMiddleware - Change url to handle aliased urls like /about to /content/1
-func urlAliasMiddleware() echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			ctx := c.Get("app").(*catu.AppContext)
-			ctx.PathBeforeAlias = c.Request().URL.Path
+// // urlAliasMiddleware - Change url to handle aliased urls like /about to /content/1
+// func urlAliasMiddleware() echo.MiddlewareFunc {
+// 	return func(next echo.HandlerFunc) echo.HandlerFunc {
+// 		return func(c echo.Context) error {
+// 			ctx := c.Get("app").(*AppContext)
+// 			ctx.PathBeforeAlias = c.Request().URL.Path
 
-			if configuration.CFGs.URL_ALIAS_ENABLE == "" {
-				return next(c)
-			}
+// 			if configuration.CFGs.URL_ALIAS_ENABLE == "" {
+// 				return next(c)
+// 			}
 
-			path, err := getPathFromReq(c.Request())
-			if err != nil {
-				return c.String(http.StatusInternalServerError, "Error on parse url")
-			}
+// 			path, err := getPathFromReq(c.Request())
+// 			if err != nil {
+// 				return c.String(http.StatusInternalServerError, "Error on parse url")
+// 			}
 
-			if isPublicRoute(path) {
-				// public folders dont have alias...
-				return next(c)
-			}
+// 			if isPublicRoute(path) {
+// 				// public folders dont have alias...
+// 				return next(c)
+// 			}
 
-			logrus.WithFields(logrus.Fields{
-				"url":           path,
-				"c.path":        c.Path(),
-				"c.QueryString": c.QueryString(),
-			}).Debug("urlAliasMiddleware url after alias")
+// 			logrus.WithFields(logrus.Fields{
+// 				"url":           path,
+// 				"c.path":        c.Path(),
+// 				"c.QueryString": c.QueryString(),
+// 			}).Debug("urlAliasMiddleware url after alias")
 
-			// save path before alias for reuse ...
-			ctx.PathBeforeAlias = path
+// 			// save path before alias for reuse ...
+// 			ctx.PathBeforeAlias = path
 
-			var record models.UrlAlias
-			err = models.UrlAliasGetByURL(path, &record)
-			if err != nil {
-				log.Println("Error on get url alias", err)
-			}
+// 			var record models.UrlAlias
+// 			err = models.UrlAliasGetByURL(path, &record)
+// 			if err != nil {
+// 				log.Println("Error on get url alias", err)
+// 			}
 
-			if record.Target != "" && record.Alias != "" {
-				if record.Target == path && ctx.ResponseContentType == "text/html" {
-					// redirect to alias url keeping the query string
-					queryString := c.QueryString()
-					if queryString != "" {
-						queryString = "?" + queryString
-					}
+// 			if record.Target != "" && record.Alias != "" {
+// 				if record.Target == path && ctx.ResponseContentType == "text/html" {
+// 					// redirect to alias url keeping the query string
+// 					queryString := c.QueryString()
+// 					if queryString != "" {
+// 						queryString = "?" + queryString
+// 					}
 
-					return c.Redirect(302, record.Alias+queryString)
-				} else {
-					// override and continue with target url
-					RewriteURL(record.Target, c)
-					ctx.Pager.CurrentUrl = path
-				}
-			}
+// 					return c.Redirect(302, record.Alias+queryString)
+// 				} else {
+// 					// override and continue with target url
+// 					RewriteURL(record.Target, c)
+// 					ctx.Pager.CurrentUrl = path
+// 				}
+// 			}
 
-			return next(c)
-		}
-	}
-}
+// 			return next(c)
+// 		}
+// 	}
+// }
 
-func getUrlFromReq(req *http.Request) (string, error) {
-	rawURI := req.RequestURI
-	if rawURI != "" && rawURI[0] != '/' {
-		prefix := ""
-		if req.URL.Scheme != "" {
-			prefix = req.URL.Scheme + "://"
-		}
-		if req.URL.Host != "" {
-			prefix += req.URL.Host // host or host:port
-		}
-		if prefix != "" {
-			rawURI = strings.TrimPrefix(rawURI, prefix)
-		}
-	}
+// func getUrlFromReq(req *http.Request) (string, error) {
+// 	rawURI := req.RequestURI
+// 	if rawURI != "" && rawURI[0] != '/' {
+// 		prefix := ""
+// 		if req.URL.Scheme != "" {
+// 			prefix = req.URL.Scheme + "://"
+// 		}
+// 		if req.URL.Host != "" {
+// 			prefix += req.URL.Host // host or host:port
+// 		}
+// 		if prefix != "" {
+// 			rawURI = strings.TrimPrefix(rawURI, prefix)
+// 		}
+// 	}
 
-	return rawURI, nil
-}
+// 	return rawURI, nil
+// }
 
-func getPathFromReq(req *http.Request) (string, error) {
-	return req.URL.Path, nil
-}
+// func getPathFromReq(req *http.Request) (string, error) {
+// 	return req.URL.Path, nil
+// }
 
 // extensionMiddleware - handle url extensions
 func extensionMiddleware() echo.MiddlewareFunc {
@@ -147,7 +145,7 @@ func extensionMiddleware() echo.MiddlewareFunc {
 				return next(c)
 			}
 
-			ctx := c.Get("app").(*app.AppContext)
+			ctx := c.Get("app").(*AppContext)
 			oldUrl := req.URL.Path
 
 			logrus.WithFields(logrus.Fields{
@@ -183,7 +181,7 @@ func extensionMiddleware() echo.MiddlewareFunc {
 func contentNegotiationMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			ctx := c.Get("app").(*app.AppContext)
+			ctx := c.Get("app").(*AppContext)
 			if ctx.ResponseContentType != "text/html" {
 				// already filled
 				return next(c)
