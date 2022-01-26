@@ -1,22 +1,4 @@
-package catu
-
-func (r *App) Can(permission string, userRoles []string) bool {
-	// first check if user is administrator
-	for i := range userRoles {
-		if userRoles[i] == "administrator" {
-			return true
-		}
-	}
-
-	for j := range userRoles {
-		R := r.RolesList[userRoles[j]]
-		if R.Can(permission) {
-			return true
-		}
-	}
-
-	return false
-}
+package acl
 
 type Role struct {
 	Name          string   `json:"name"`

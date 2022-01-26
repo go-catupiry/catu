@@ -6,7 +6,6 @@ import (
 	"html/template"
 	"io"
 	"io/ioutil"
-	"log"
 	"math"
 	"os"
 	"path/filepath"
@@ -46,7 +45,11 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 	default:
 		htmlContext := data.(*TemplateCTX)
 
-		log.Println("RODO!!!!!!!", "will run", name, htmlContext)
+		logrus.WithFields(logrus.Fields{
+			"name":          name,
+			"htmlContext":   htmlContext,
+			"len templates": len(t.templates.Templates()),
+		}).Debug("Render")
 
 		var contentBuffer bytes.Buffer
 		err := t.templates.ExecuteTemplate(&contentBuffer, name, htmlContext)
@@ -54,11 +57,9 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 			logrus.WithFields(logrus.Fields{
 				"error": err,
 				"name":  name,
-			}).Error("theme.Render error on execute template")
+			}).Error("catu.theme.Render error on execute template")
 			return err
 		}
-
-		log.Println("RODO!!!!!!!", err)
 
 		ctx := htmlContext.Ctx.(*AppContext)
 		ctx.Content = template.HTML(contentBuffer.String())
@@ -67,9 +68,10 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 		err = t.templates.ExecuteTemplate(&layoutBuffer, ctx.Layout, htmlContext)
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
-				"error": err,
-				"name":  name,
-			}).Error("theme.Render error on execute layout template")
+				"error":  err,
+				"name":   name,
+				"layout": ctx.Layout,
+			}).Error("catu.theme.Render error on execute layout template")
 			return err
 		}
 
@@ -99,6 +101,7 @@ func findAndParseTemplates(rootDir string, funcMap template.FuncMap) (*template.
 
 			name := path[pfx:]
 			name = strings.Replace(name, ".html", "", 1)
+
 			t := root.New(name).Funcs(funcMap)
 			_, e2 = t.Parse(string(b))
 			if e2 != nil {

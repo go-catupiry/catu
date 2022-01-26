@@ -2,6 +2,7 @@ package catu
 
 import (
 	"html/template"
+	"io"
 	"strconv"
 	"strings"
 
@@ -75,6 +76,13 @@ func (r *AppContext) RenderPagination(name string) string {
 	return html
 }
 
+// Render one template, alias to app.templates.ExecuteTemplate()
+func (r *AppContext) Render(wr io.Writer, name string, data interface{}) error {
+	app := GetApp()
+
+	return app.GetTemplates().ExecuteTemplate(wr, name, data)
+}
+
 // Add a body class string checking if is unique
 func (r *AppContext) AddBodyClass(class string) {
 	if helpers.SliceContains(r.BodyClass, class) {
@@ -146,18 +154,22 @@ func (r *AppContext) Can(permission string) bool {
 }
 
 func NewAppContext() AppContext {
+	app := GetApp()
+
+	port := app.Configuration.GetF("PORT", "8080")
+
 	ctx := AppContext{
-		// Protocol:            configuration.CFGs.PROTOCOL,
-		// Hostname:            configuration.CFGs.HOSTNAME,
-		// AppOrigin:           configuration.CFGs.APP_ORIGIN,
+		Protocol:  app.Configuration.GetF("PROTOCOL", "http"),
+		Hostname:  app.Configuration.GetF("HOSTNAME", "localhost"),
+		AppOrigin: app.Configuration.GetF("APP_ORIGIN", "http://localhost:"+port),
 		// Title:               "",
 		// ResponseContentType: "text/html",
-		// Layout:              "site/layouts/default",
-		// ENV:                 configuration.CFGs.GO_ENV,
+		Layout: "site/layouts/default",
+		ENV:    app.Configuration.GetF("GO_ENV", "development"),
 	}
 
 	ctx.Pager = pagination.NewPager()
-	// ctx.Pager.Limit, _ = strconv.ParseInt(configuration.CFGs.PAGER_LIMIT, 10, 64)
+	ctx.Pager.Limit, _ = strconv.ParseInt(app.Configuration.GetF("PAGER_LIMIT", "20"), 10, 64)
 	ctx.ContentData = map[string]interface{}{}
 
 	ctx.MetaTags.Title = "Monitor do Mercado"
@@ -168,6 +180,7 @@ func NewAppContext() AppContext {
 }
 
 func GetRequestAppContext(c echo.Context) AppContext {
+	app := GetApp()
 	ctx := NewAppContext()
 	ctx.Pager.CurrentUrl = c.Request().URL.Path
 
@@ -175,7 +188,7 @@ func GetRequestAppContext(c echo.Context) AppContext {
 		return ctx
 	}
 
-	// limitMax, _ := strconv.ParseInt(configuration.CFGs.PAGER_LIMIT_MAX, 10, 64)
+	limitMax, _ := strconv.ParseInt(app.Configuration.GetF("PAGER_LIMIT_MAX", "50"), 10, 64)
 
 	rawParams := c.QueryParams()
 
@@ -183,19 +196,19 @@ func GetRequestAppContext(c echo.Context) AppContext {
 
 	for key, param := range rawParams {
 		// get limit with max value for security:
-		// if key == "limit" && len(param) == 1 {
-		// 	// queryLimit, err := strconv.ParseInt(param[0], 10, 64)
-		// 	// if err != nil {
-		// 	// 	logrus.WithFields(logrus.Fields{
-		// 	// 		"key":   key,
-		// 	// 		"param": param,
-		// 	// 	}).Error("GetRequestAppContext invalid query param limit")
-		// 	// 	continue
-		// 	// }
-		// 	// // if queryLimit > 0 && queryLimit < limitMax {
-		// 	// // 	ctx.Pager.Limit = queryLimit
-		// 	// // }
-		// }
+		if key == "limit" && len(param) == 1 {
+			queryLimit, err := strconv.ParseInt(param[0], 10, 64)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"key":   key,
+					"param": param,
+				}).Error("GetRequestAppContext invalid query param limit")
+				continue
+			}
+			if queryLimit > 0 && queryLimit < limitMax {
+				ctx.Pager.Limit = queryLimit
+			}
+		}
 
 		if key == "page" && len(param) == 1 {
 			page, _ := strconv.ParseInt(param[0], 10, 64)
@@ -254,6 +267,7 @@ func GetPathLimitFromReq() {
 }
 
 func (r *AppContext) RenderMetaTags() template.HTML {
+	app := GetApp()
 	html := ""
 
 	pageUrl := r.AppOrigin + r.PathBeforeAlias
@@ -263,12 +277,14 @@ func (r *AppContext) RenderMetaTags() template.HTML {
 		html += `<link rel="canonical" href="` + pageUrl + `" />`
 	}
 
-	// if configuration.CFGs.SITE_NAME != "" {
-	// 	html += `<meta property="og:site_name" content="` + configuration.CFGs.SITE_NAME + `" />`
-	// 	// html += `<meta content="` + configuration.CFGs.SITE_NAME + `" itemprop="name">`
-	// }
+	siteName := app.Configuration.Get("SITE_NAME")
 
-	// html += `<meta content="` + configuration.CFGs.SITE_NAME + `" name="twitter:site">`
+	if siteName != "" {
+		html += `<meta property="og:site_name" content="` + siteName + `" />`
+		html += `<meta content="` + siteName + `" itemprop="name">`
+	}
+
+	html += `<meta content="` + siteName + `" name="twitter:site">`
 	html += `<meta property="og:type" content="website" />`
 
 	if r.MetaTags.Description != "" {

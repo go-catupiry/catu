@@ -9,8 +9,10 @@ import (
 	"time"
 
 	"github.com/Masterminds/sprig"
+	"github.com/go-catupiry/catu/acl"
 	"github.com/go-catupiry/catu/configuration"
 	"github.com/go-catupiry/catu/helpers"
+	"github.com/go-catupiry/catu/http_client"
 	"github.com/go-catupiry/catu/logger"
 	"github.com/go-playground/validator/v10"
 	"github.com/gookit/event"
@@ -18,6 +20,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/sqlite"
 	gorm_logger "gorm.io/gorm/logger"
 
 	"gorm.io/gorm"
@@ -29,10 +32,14 @@ type App struct {
 	Events *event.Manager
 
 	Configuration configuration.Configer
-
+	// Default database
 	DB *gorm.DB
+	// avaible databases
+	DBs map[string]*gorm.DB
 
 	Plugins map[string]Pluginer
+
+	Models map[string]interface{}
 
 	router *echo.Echo
 
@@ -40,7 +47,7 @@ type App struct {
 	apiRouterGroups map[string]*echo.Group
 
 	RolesString string
-	RolesList   map[string]Role
+	RolesList   map[string]acl.Role
 
 	templates         *template.Template
 	templateFunctions template.FuncMap
@@ -65,7 +72,7 @@ func (r *App) GetTemplates() *template.Template {
 func (r *App) Bootstrap() error {
 	var err error
 
-	logrus.Debug("Bootstrap running")
+	logrus.Debug("catu.App.Bootstrap running")
 	// default roles and permissions, override it on your app
 	json.Unmarshal([]byte(r.Configuration.Get("Roles")), &r.RolesList)
 
@@ -77,6 +84,14 @@ func (r *App) Bootstrap() error {
 	}
 
 	r.Events.MustTrigger("configuration", event.M{"app": r})
+
+	err = r.InitDatabase("default", configuration.GetEnv("DB_ENGINE", "sqlite"), true)
+	if err != nil {
+		return err
+	}
+
+	http_client.Init()
+
 	r.Events.MustTrigger("bindMiddlewares", event.M{"app": r})
 	r.Events.MustTrigger("bindRoutes", event.M{"app": r})
 	r.Events.MustTrigger("setResponseFormats", event.M{"app": r})
@@ -88,7 +103,11 @@ func (r *App) Bootstrap() error {
 
 	err = r.LoadTemplates()
 	if err != nil {
-		panic(errors.Wrap(err, "App.Bootstrap Error on LoadTemplates"))
+		return errors.Wrap(err, "App.Bootstrap Error on LoadTemplates")
+	}
+
+	r.router.Renderer = &TemplateRenderer{
+		templates: r.GetTemplates(),
 	}
 
 	r.Events.MustTrigger("bootstrap", event.M{"app": r})
@@ -101,6 +120,12 @@ func (r *App) StartHTTPServer() error {
 	if port == "" {
 		port = "8080"
 	}
+
+	// data, err := json.MarshalIndent(r.GetRouter().Routes(), "", "  ")
+	// if err != nil {
+	// 	return err
+	// }
+	// log.Println("routes", string(data))
 
 	logrus.Info("Server listening on port " + port)
 	http.ListenAndServe(":"+port, r.GetRouter())
@@ -130,10 +155,23 @@ func (r *App) GetAPIRouterGroup(name string) *echo.Group {
 	return r.apiRouterGroups[name]
 }
 
-func (r *App) InitDatabase(name, path string) {
-	dbURI := r.Configuration.Get("DB_URI")
-	dbSlowThreshold := r.Configuration.GetInt64("DB_SLOW_THRESHOLD")
-	logQuery := r.Configuration.Get("LOG_QUERY")
+func (r *App) InitDatabase(name, engine string, isDefault bool) error {
+	var err error
+	var db *gorm.DB
+
+	dbURI := r.Configuration.GetF("DB_URI", "test.sqlite?charset=utf8mb4")
+	dbSlowThreshold := r.Configuration.GetInt64F("DB_SLOW_THRESHOLD", 400)
+	logQuery := r.Configuration.GetF("LOG_QUERY", "1")
+
+	logrus.WithFields(logrus.Fields{
+		"dbURI":           dbURI,
+		"dbSlowThreshold": dbSlowThreshold,
+		"logQuery":        logQuery,
+	}).Debug("catu.App.InitDatabase starting db with configs")
+
+	if dbURI == "" {
+		return errors.New("catu.App.InitDatabase DB_URI environment variable is required")
+	}
 
 	dsn := dbURI + "?charset=utf8mb4&parseTime=True&loc=Local"
 
@@ -150,38 +188,73 @@ func (r *App) InitDatabase(name, path string) {
 		logg = dbLogger.LogMode(gorm_logger.Info)
 	}
 
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: logg,
-	})
+	switch engine {
+	case "mysql":
+		db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
+			Logger: logg,
+		})
+	case "sqlite":
+		db, err = gorm.Open(sqlite.Open(dbURI), &gorm.Config{
+			Logger: logg,
+		})
 
-	if err != nil {
-		log.Panicln("Error on connect in database", err)
+	default:
+		return errors.New("catu.App.InitDatabase invalid database engine. Options available: mysql or sqlite")
 	}
 
-	r.DB = db
+	if err != nil {
+		return errors.Wrap(err, "catu.App.InitDatabase error on database connection")
+	}
+
+	if isDefault {
+		r.DB = db
+	}
+
+	return nil
+}
+
+func (r *App) SetModel(name string, f interface{}) {
+	r.Models[name] = f
+}
+
+func (r *App) GetModel(name string) interface{} {
+	return r.Models[name]
 }
 
 func (r *App) SetTemplateFunction(name string, f interface{}) {
 	r.templateFunctions[name] = f
 }
 
+func (r *App) Can(permission string, userRoles []string) bool {
+	// first check if user is administrator
+	for i := range userRoles {
+		if userRoles[i] == "administrator" {
+			return true
+		}
+	}
+
+	for j := range userRoles {
+		R := r.RolesList[userRoles[j]]
+		if R.Can(permission) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (r *App) LoadTemplates() error {
-	rootDir := r.Configuration.Get("TEMPLATE_FOLDER")
+	rootDir := r.Configuration.GetF("TEMPLATE_FOLDER", "./templates")
 	disableTemplating := r.Configuration.GetBool("TEMPLATE_DISABLE")
 
 	if disableTemplating {
 		return nil
 	}
 
-	if rootDir == "" {
-		// defalt template folder in app:
-		rootDir = "./src/templates"
-	}
-
 	tpls, err := findAndParseTemplates(rootDir, r.templateFunctions)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"error":   err,
+			// "error":   errHealthCheckHandlerr,
 			"rootDir": rootDir,
 		}).Error("catu.App.LoadTemplates Error on parse templates")
 		r.templates = tpls
@@ -209,8 +282,7 @@ func newApp() *App {
 	app.apiRouterGroups = make(map[string]*echo.Group)
 
 	app.router = echo.New()
-	app.router.GET("/health", HealthCheck)
-
+	app.router.GET("/health", HealthCheckHandler)
 	app.Plugins = make(map[string]Pluginer)
 
 	app.templates = &template.Template{}
@@ -219,15 +291,11 @@ func newApp() *App {
 	app.SetRouterGroup("public", "/public")
 
 	apiRouterGroup := app.SetRouterGroup("api", "/api")
-	apiRouterGroup.GET("", HealthCheck)
+	apiRouterGroup.GET("", HealthCheckHandler)
 
 	app.router.Validator = &helpers.CustomValidator{Validator: validator.New()}
 
 	app.templateFunctions = sprig.FuncMap()
-
-	app.router.Renderer = &TemplateRenderer{
-		templates: app.GetTemplates(),
-	}
 
 	app.router.HTTPErrorHandler = CustomHTTPErrorHandler
 

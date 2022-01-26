@@ -12,6 +12,11 @@ type Configer interface {
 	GetBool(key string) bool
 	GetInt(key string) int
 	GetInt64(key string) int64
+
+	GetF(key, fallback string) string
+	GetBoolF(key string, fallback bool) bool
+	GetIntF(key string, fallback int) int
+	GetInt64F(key string, fallback int64) int64
 }
 
 // Build and get a new Cfg object

@@ -9,17 +9,17 @@ type Plugin struct {
 	Name string
 }
 
-func (p *Plugin) Init(app *App) error {
+func (p *Plugin) Init(a *App) error {
 	logrus.WithFields(logrus.Fields{
 		"PluginName": p.Name,
-	}).Debug("tupi.Plugin.Init Running init")
+	}).Debug("catu.Plugin.Init Running init")
 
-	app.Events.On("bindMiddlewares", event.ListenerFunc(func(e event.Event) error {
-		return p.BindMiddlewares(app)
+	a.Events.On("bindMiddlewares", event.ListenerFunc(func(e event.Event) error {
+		return p.BindMiddlewares(a)
 	}), event.Normal)
 
-	app.Events.On("setTemplateFunctions", event.ListenerFunc(func(e event.Event) error {
-		return p.setTemplateFunctions(app)
+	a.Events.On("setTemplateFunctions", event.ListenerFunc(func(e event.Event) error {
+		return p.setTemplateFunctions(a)
 	}), event.Normal)
 
 	return nil
@@ -29,16 +29,18 @@ func (p *Plugin) GetName() string {
 	return p.Name
 }
 
-func (p *Plugin) BindMiddlewares(app *App) error {
-	BindMiddlewares(app, p)
+func (p *Plugin) BindMiddlewares(a *App) error {
+	BindMiddlewares(a, p)
 	return nil
 }
 
 func (p *Plugin) setTemplateFunctions(app *App) error {
 	app.SetTemplateFunction("paginate", paginate)
 	app.SetTemplateFunction("contentDates", contentDates)
-	app.SetTemplateFunction("shareMenu", shareMenu)
 	app.SetTemplateFunction("truncate", truncate)
+	app.SetTemplateFunction("formatCurrency", formatCurrency)
+	app.SetTemplateFunction("formatDecimalWithDots", formatDecimalWithDots)
+	app.SetTemplateFunction("html", noEscapeHTML)
 
 	return nil
 }

@@ -30,6 +30,12 @@ Powered by: https://github.com/gookit/event
 - setResponseFormats
 - bootstrap
 
+## Run tests:
+
+```sh
+go test ./...
+```
+
 ## Build with
 
 - Go
