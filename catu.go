@@ -1,6 +1,7 @@
 package catu
 
 import (
+	"github.com/go-catupiry/catu/configuration"
 	"gorm.io/gorm"
 )
 
@@ -17,6 +18,10 @@ func Init() *App {
 
 func GetApp() *App {
 	return appInstance
+}
+
+func GetConfiguration() configuration.Configer {
+	return appInstance.Configuration
 }
 
 func GetDefaultDatabaseConnection() *gorm.DB {

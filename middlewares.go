@@ -10,6 +10,8 @@ import (
 
 // BindMiddlewares - Bind middlewares in order
 func BindMiddlewares(app *App, p *Plugin) {
+	logrus.Debug("catu.BindMiddlewares " + p.GetName())
+
 	goEnv := app.Configuration.Get("GO_ENV")
 
 	router := app.GetRouter()
@@ -38,7 +40,7 @@ func BindMiddlewares(app *App, p *Plugin) {
 func initAppCtx() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			ctx := GetRequestAppContext(c)
+			ctx := NewRequestAppContext(c)
 			c.Set("app", &ctx)
 
 			logrus.WithFields(logrus.Fields{

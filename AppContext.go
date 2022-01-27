@@ -179,7 +179,7 @@ func NewAppContext() AppContext {
 	return ctx
 }
 
-func GetRequestAppContext(c echo.Context) AppContext {
+func NewRequestAppContext(c echo.Context) AppContext {
 	app := GetApp()
 	ctx := NewAppContext()
 	ctx.Pager.CurrentUrl = c.Request().URL.Path
@@ -202,7 +202,7 @@ func GetRequestAppContext(c echo.Context) AppContext {
 				logrus.WithFields(logrus.Fields{
 					"key":   key,
 					"param": param,
-				}).Error("GetRequestAppContext invalid query param limit")
+				}).Error("NewRequestAppContext invalid query param limit")
 				continue
 			}
 			if queryLimit > 0 && queryLimit < limitMax {
@@ -237,7 +237,7 @@ func GetQueryIntFromReq(param string, c echo.Context) int {
 				"path":  c.Path(),
 				"param": param,
 				"page":  page,
-			}).Warn("GetRequestAppContext invalid page query param")
+			}).Warn("NewRequestAppContext invalid page query param")
 		}
 	}
 
