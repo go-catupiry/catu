@@ -157,11 +157,13 @@ func NewAppContext() AppContext {
 	app := GetApp()
 
 	port := app.Configuration.GetF("PORT", "8080")
+	protocol := app.Configuration.GetF("PROTOCOL", "http")
+	hostname := app.Configuration.GetF("HOSTNAME", "localhost")
 
 	ctx := AppContext{
-		Protocol:  app.Configuration.GetF("PROTOCOL", "http"),
-		Hostname:  app.Configuration.GetF("HOSTNAME", "localhost"),
-		AppOrigin: app.Configuration.GetF("APP_ORIGIN", "http://localhost:"+port),
+		Protocol:  protocol,
+		Hostname:  hostname,
+		AppOrigin: app.Configuration.GetF("APP_ORIGIN", port+"://"+hostname+":"+port),
 		// Title:               "",
 		// ResponseContentType: "text/html",
 		Layout: "site/layouts/default",

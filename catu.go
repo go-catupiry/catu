@@ -2,10 +2,15 @@ package catu
 
 import (
 	"github.com/go-catupiry/catu/configuration"
+	"github.com/joho/godotenv"
 	"gorm.io/gorm"
 )
 
 var appInstance *App
+
+func init() {
+	initDotEnvConfigSupport()
+}
 
 func Init() *App {
 	appInstance = newApp()
@@ -14,6 +19,10 @@ func Init() *App {
 
 	appInstance.RegisterPlugin(&Plugin{Name: "catu"})
 	return appInstance
+}
+
+func initDotEnvConfigSupport() {
+	godotenv.Load()
 }
 
 func GetApp() *App {

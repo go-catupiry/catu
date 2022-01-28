@@ -10,6 +10,7 @@ require (
 	github.com/google/jsonapi v1.0.0
 	github.com/gookit/event v1.0.5
 	github.com/gosimple/slug v1.12.0
+	github.com/joho/godotenv v1.4.0
 	github.com/labstack/echo/v4 v4.6.1
 	github.com/leekchan/accounting v1.0.0
 	github.com/microcosm-cc/bluemonday v1.0.17
