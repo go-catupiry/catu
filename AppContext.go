@@ -15,7 +15,7 @@ import (
 type AppContext struct {
 	PathBeforeAlias string
 	Protocol        string
-	Hostname        string
+	Domain          string
 	AppOrigin       string
 	Title           string
 
@@ -158,12 +158,12 @@ func NewAppContext() AppContext {
 
 	port := app.Configuration.GetF("PORT", "8080")
 	protocol := app.Configuration.GetF("PROTOCOL", "http")
-	hostname := app.Configuration.GetF("HOSTNAME", "localhost")
+	domain := app.Configuration.GetF("DOMAIN", "localhost")
 
 	ctx := AppContext{
 		Protocol:  protocol,
-		Hostname:  hostname,
-		AppOrigin: app.Configuration.GetF("APP_ORIGIN", port+"://"+hostname+":"+port),
+		Domain:    domain,
+		AppOrigin: app.Configuration.GetF("APP_ORIGIN", protocol+"://"+domain+":"+port),
 		// Title:               "",
 		// ResponseContentType: "text/html",
 		Layout: "site/layouts/default",
