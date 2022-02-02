@@ -155,12 +155,17 @@ func extensionMiddleware() echo.MiddlewareFunc {
 				"oldUrl": oldUrl,
 			}).Debug("extensionMiddleware url before process")
 
+			haveQueryParamJSONType := false
+
 			query := c.QueryString()
 			if query != "" {
 				query = "?" + query
+			} else {
+				responseFormat := c.QueryParam("responseType")
+				haveQueryParamJSONType = responseFormat == "json"
 			}
 
-			if strings.HasSuffix(oldUrl, ".json") {
+			if strings.HasSuffix(oldUrl, ".json") || haveQueryParamJSONType {
 				newPath := strings.TrimSuffix(oldUrl, ".json")
 				url, err := req.URL.Parse(newPath + query)
 				if err != nil {
