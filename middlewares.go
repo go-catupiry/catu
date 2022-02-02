@@ -160,7 +160,6 @@ func extensionMiddleware() echo.MiddlewareFunc {
 			query := c.QueryString()
 			if query != "" {
 				query = "?" + query
-			} else {
 				responseFormat := c.QueryParam("responseType")
 				haveQueryParamJSONType = responseFormat == "json"
 			}
