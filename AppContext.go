@@ -165,9 +165,9 @@ func NewAppContext() AppContext {
 		Domain:    domain,
 		AppOrigin: app.Configuration.GetF("APP_ORIGIN", protocol+"://"+domain+":"+port),
 		// Title:               "",
-		// ResponseContentType: "text/html",
-		Layout: "site/layouts/default",
-		ENV:    app.Configuration.GetF("GO_ENV", "development"),
+		ResponseContentType: "text/html",
+		Layout:              "site/layouts/default",
+		ENV:                 app.Configuration.GetF("GO_ENV", "development"),
 	}
 
 	ctx.Pager = pagination.NewPager()
