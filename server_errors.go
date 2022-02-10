@@ -6,19 +6,40 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
+type ValidationResponse struct {
+	Errors []*ValidationFieldError `json:"errors"`
+}
+
+type ValidationFieldError struct {
+	Field   string `json:"field"`
+	Tag     string `json:"tag"`
+	Value   string `json:"value"`
+	Message string `json:"message"`
+}
+
 func CustomHTTPErrorHandler(err error, c echo.Context) {
-	code := http.StatusInternalServerError
+	code := 0
 	if he, ok := err.(*echo.HTTPError); ok {
 		code = he.Code
 	}
 
-	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+	if ve, ok := err.(validator.ValidationErrors); ok {
+		validationError(ve, err, c)
+		return
+	}
+
+	if code == 0 && err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		code = 404
+	}
+
+	if code == 0 {
+		code = 500
 	}
 
 	switch code {
@@ -49,7 +70,7 @@ func forbiddenErrorHandler(err error, c echo.Context) error {
 
 	switch ctx.ResponseContentType {
 	case "application/json":
-		c.JSON(http.StatusUnauthorized, make(map[string]string))
+		c.JSON(http.StatusUnauthorized, err)
 		return nil
 	case "application/vnd.api+json":
 		c.JSON(http.StatusUnauthorized, make(map[string]string))
@@ -90,6 +111,40 @@ func notFoundErrorHandler(err error, c echo.Context) error {
 	}
 }
 
+func validationError(ve validator.ValidationErrors, err error, c echo.Context) error {
+	ctx := c.Get("app").(*AppContext)
+
+	resp := ValidationResponse{}
+
+	if err != nil {
+		for _, err := range err.(validator.ValidationErrors) {
+			var el ValidationFieldError
+			el.Field = err.Field()
+			el.Tag = err.Tag()
+			el.Value = err.Param()
+			el.Message = err.Error()
+			resp.Errors = append(resp.Errors, &el)
+		}
+	}
+
+	switch ctx.ResponseContentType {
+	case "application/json":
+		return c.JSON(http.StatusBadRequest, resp)
+	case "application/vnd.api+json":
+		return c.JSON(http.StatusBadRequest, resp)
+	default:
+		ctx.Title = "Bad request"
+
+		if err := c.Render(http.StatusInternalServerError, "site/400", &TemplateCTX{
+			Ctx: ctx,
+		}); err != nil {
+			c.Logger().Error(err)
+		}
+
+		return nil
+	}
+}
+
 func internalServerErrorHandler(err error, c echo.Context) error {
 	ctx := c.Get("app").(*AppContext)
 
@@ -105,6 +160,10 @@ func internalServerErrorHandler(err error, c echo.Context) error {
 
 	switch ctx.ResponseContentType {
 	case "application/json":
+		if he, ok := err.(*echo.HTTPError); ok {
+			return c.JSON(http.StatusInternalServerError, he)
+		}
+
 		c.JSON(http.StatusInternalServerError, make(map[string]string))
 		return nil
 	case "application/vnd.api+json":

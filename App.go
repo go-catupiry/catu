@@ -282,6 +282,11 @@ func newApp() *App {
 	app.apiRouterGroups = make(map[string]*echo.Group)
 
 	app.router = echo.New()
+
+	app.router.Binder = &CustomBinder{}
+	app.router.HTTPErrorHandler = CustomHTTPErrorHandler
+	app.router.Validator = &helpers.CustomValidator{Validator: validator.New()}
+
 	app.router.GET("/health", HealthCheckHandler)
 	app.Plugins = make(map[string]Pluginer)
 
@@ -293,11 +298,7 @@ func newApp() *App {
 	apiRouterGroup := app.SetRouterGroup("api", "/api")
 	apiRouterGroup.GET("", HealthCheckHandler)
 
-	app.router.Validator = &helpers.CustomValidator{Validator: validator.New()}
-
 	app.templateFunctions = sprig.FuncMap()
-
-	app.router.HTTPErrorHandler = CustomHTTPErrorHandler
 
 	return &app
 }
