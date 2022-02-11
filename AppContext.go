@@ -40,7 +40,7 @@ type AppContext struct {
 }
 
 type SessionData struct {
-	UserID int64
+	UserID string
 }
 
 func (r *AppContext) Set(name string, value interface{}) {
@@ -127,8 +127,7 @@ func (r *AppContext) ParseQueryFromReq(c echo.Context) error {
 
 func (r *AppContext) GetAuthenticatedRoles() *[]string {
 	if r.IsAuthenticated {
-		roles := r.AuthenticatedUser.GetRoles()
-		return &roles
+		return &r.Roles
 	}
 
 	return &[]string{"unAuthenticated"}
