@@ -15,9 +15,13 @@ func BindMiddlewares(app *App, p *Plugin) {
 	goEnv := app.Configuration.Get("GO_ENV")
 
 	router := app.GetRouter()
+
+	router.Pre(initAppCtx())
+	router.Pre(extensionMiddleware())
+	router.Pre(contentNegotiationMiddleware())
+
 	// router.Use(mw.Recover())
 	router.Use(middleware.Gzip())
-
 	router.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowCredentials: true,
 		MaxAge:           18000, // seccounds
@@ -27,10 +31,6 @@ func BindMiddlewares(app *App, p *Plugin) {
 		router.Debug = true
 	}
 
-	router.Pre(initAppCtx())
-	router.Pre(extensionMiddleware())
-	router.Pre(contentNegotiationMiddleware())
-	// router.Pre(urlAliasMiddleware())
 }
 
 func initAppCtx() echo.MiddlewareFunc {
