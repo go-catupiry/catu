@@ -161,7 +161,7 @@ func (r *App) InitDatabase(name, engine string, isDefault bool) error {
 
 	dbURI := r.Configuration.GetF("DB_URI", "test.sqlite?charset=utf8mb4")
 	dbSlowThreshold := r.Configuration.GetInt64F("DB_SLOW_THRESHOLD", 400)
-	logQuery := r.Configuration.GetF("LOG_QUERY", "1")
+	logQuery := r.Configuration.GetF("LOG_QUERY", "")
 
 	logrus.WithFields(logrus.Fields{
 		"dbURI":           dbURI,
