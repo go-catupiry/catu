@@ -7,7 +7,6 @@ require (
 	github.com/cuducos/go-cnpj v0.0.1
 	github.com/fabienm/go-logrus-formatters v1.0.0
 	github.com/go-playground/validator/v10 v10.10.0
-	github.com/google/jsonapi v1.0.0
 	github.com/gookit/event v1.0.5
 	github.com/gosimple/slug v1.12.0
 	github.com/joho/godotenv v1.4.0

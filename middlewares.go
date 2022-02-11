@@ -31,10 +31,6 @@ func BindMiddlewares(app *App, p *Plugin) {
 	router.Pre(extensionMiddleware())
 	router.Pre(contentNegotiationMiddleware())
 	// router.Pre(urlAliasMiddleware())
-
-	// app.GetRouterGroup("main").Use(oauth2AuthenticationMiddleware())
-	// app.GetRouterGroup("main").Use(sessionAuthenticationMiddleware())
-	// app.GetRouterGroup("api").Use(oauth2AuthenticationMiddleware())
 }
 
 func initAppCtx() echo.MiddlewareFunc {
@@ -57,85 +53,6 @@ func initAppCtx() echo.MiddlewareFunc {
 func isPublicRoute(url string) bool {
 	return strings.HasPrefix(url, "/health") || strings.HasPrefix(url, "/public")
 }
-
-// // urlAliasMiddleware - Change url to handle aliased urls like /about to /content/1
-// func urlAliasMiddleware() echo.MiddlewareFunc {
-// 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-// 		return func(c echo.Context) error {
-// 			ctx := c.Get("app").(*AppContext)
-// 			ctx.PathBeforeAlias = c.Request().URL.Path
-
-// 			if configuration.CFGs.URL_ALIAS_ENABLE == "" {
-// 				return next(c)
-// 			}
-
-// 			path, err := getPathFromReq(c.Request())
-// 			if err != nil {
-// 				return c.String(http.StatusInternalServerError, "Error on parse url")
-// 			}
-
-// 			if isPublicRoute(path) {
-// 				// public folders dont have alias...
-// 				return next(c)
-// 			}
-
-// 			logrus.WithFields(logrus.Fields{
-// 				"url":           path,
-// 				"c.path":        c.Path(),
-// 				"c.QueryString": c.QueryString(),
-// 			}).Debug("urlAliasMiddleware url after alias")
-
-// 			// save path before alias for reuse ...
-// 			ctx.PathBeforeAlias = path
-
-// 			var record models.UrlAlias
-// 			err = models.UrlAliasGetByURL(path, &record)
-// 			if err != nil {
-// 				log.Println("Error on get url alias", err)
-// 			}
-
-// 			if record.Target != "" && record.Alias != "" {
-// 				if record.Target == path && ctx.ResponseContentType == "text/html" {
-// 					// redirect to alias url keeping the query string
-// 					queryString := c.QueryString()
-// 					if queryString != "" {
-// 						queryString = "?" + queryString
-// 					}
-
-// 					return c.Redirect(302, record.Alias+queryString)
-// 				} else {
-// 					// override and continue with target url
-// 					RewriteURL(record.Target, c)
-// 					ctx.Pager.CurrentUrl = path
-// 				}
-// 			}
-
-// 			return next(c)
-// 		}
-// 	}
-// }
-
-// func getUrlFromReq(req *http.Request) (string, error) {
-// 	rawURI := req.RequestURI
-// 	if rawURI != "" && rawURI[0] != '/' {
-// 		prefix := ""
-// 		if req.URL.Scheme != "" {
-// 			prefix = req.URL.Scheme + "://"
-// 		}
-// 		if req.URL.Host != "" {
-// 			prefix += req.URL.Host // host or host:port
-// 		}
-// 		if prefix != "" {
-// 			rawURI = strings.TrimPrefix(rawURI, prefix)
-// 		}
-// 	}
-
-// 	return rawURI, nil
-// }
-
-// func getPathFromReq(req *http.Request) (string, error) {
-// 	return req.URL.Path, nil
-// }
 
 // extensionMiddleware - handle url extensions
 func extensionMiddleware() echo.MiddlewareFunc {

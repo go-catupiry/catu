@@ -38,11 +38,13 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 	}
 
 	if code == 0 {
-		code = 500
+		code = 500 // default
 	}
 
 	switch code {
 	case 401:
+		unAuthorizedErrorHandler(err, c)
+	case 403:
 		forbiddenErrorHandler(err, c)
 	case 404:
 		notFoundErrorHandler(err, c)
@@ -67,21 +69,38 @@ func forbiddenErrorHandler(err error, c echo.Context) error {
 	ctx := c.Get("app").(*AppContext)
 
 	switch ctx.ResponseContentType {
-	case "application/json":
-		c.JSON(http.StatusUnauthorized, err)
-		return nil
-	case "application/vnd.api+json":
-		c.JSON(http.StatusUnauthorized, make(map[string]string))
-		return nil
-	default:
+	case "text/html":
 		ctx.Title = "Acesso restrito"
 
-		if err := c.Render(http.StatusNotFound, "site/401", &TemplateCTX{
+		if err := c.Render(http.StatusForbidden, "site/403", &TemplateCTX{
 			Ctx: ctx,
 		}); err != nil {
 			c.Logger().Error(err)
 		}
 
+		return nil
+	default:
+		c.JSON(http.StatusForbidden, err)
+		return nil
+	}
+}
+
+func unAuthorizedErrorHandler(err error, c echo.Context) error {
+	ctx := c.Get("app").(*AppContext)
+
+	switch ctx.ResponseContentType {
+	case "text/html":
+		ctx.Title = "Forbidden"
+
+		if err := c.Render(http.StatusUnauthorized, "site/401", &TemplateCTX{
+			Ctx: ctx,
+		}); err != nil {
+			c.Logger().Error(err)
+		}
+
+		return nil
+	default:
+		c.JSON(http.StatusUnauthorized, err)
 		return nil
 	}
 
@@ -91,9 +110,6 @@ func notFoundErrorHandler(err error, c echo.Context) error {
 	ctx := c.Get("app").(*AppContext)
 
 	switch ctx.ResponseContentType {
-	case "application/vnd.api+json":
-		c.JSON(http.StatusNotFound, make(map[string]string))
-		return nil
 	case "text/html":
 		ctx.Title = "Não encontrado"
 
@@ -126,11 +142,7 @@ func validationError(ve validator.ValidationErrors, err error, c echo.Context) e
 	}
 
 	switch ctx.ResponseContentType {
-	case "application/json":
-		return c.JSON(http.StatusBadRequest, resp)
-	case "application/vnd.api+json":
-		return c.JSON(http.StatusBadRequest, resp)
-	default:
+	case "text/html":
 		ctx.Title = "Bad request"
 
 		if err := c.Render(http.StatusInternalServerError, "site/400", &TemplateCTX{
@@ -140,6 +152,8 @@ func validationError(ve validator.ValidationErrors, err error, c echo.Context) e
 		}
 
 		return nil
+	default:
+		return c.JSON(http.StatusBadRequest, resp)
 	}
 }
 
@@ -157,17 +171,7 @@ func internalServerErrorHandler(err error, c echo.Context) error {
 	}).Warn("internalServerErrorHandler error")
 
 	switch ctx.ResponseContentType {
-	case "application/json":
-		if he, ok := err.(*echo.HTTPError); ok {
-			return c.JSON(http.StatusInternalServerError, he)
-		}
-
-		c.JSON(http.StatusInternalServerError, make(map[string]string))
-		return nil
-	case "application/vnd.api+json":
-		c.JSON(http.StatusInternalServerError, make(map[string]string))
-		return nil
-	default:
+	case "text/html":
 		ctx.Title = "Internal server error"
 
 		if err := c.Render(http.StatusInternalServerError, "site/500", &TemplateCTX{
@@ -177,6 +181,12 @@ func internalServerErrorHandler(err error, c echo.Context) error {
 		}
 
 		return nil
-	}
+	default:
+		if he, ok := err.(*echo.HTTPError); ok {
+			return c.JSON(http.StatusInternalServerError, he)
+		}
 
+		c.JSON(http.StatusInternalServerError, make(map[string]string))
+		return nil
+	}
 }
