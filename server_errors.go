@@ -3,7 +3,6 @@ package catu
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
@@ -50,7 +49,6 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 	case 500:
 		internalServerErrorHandler(err, c)
 	default:
-		log.Println("customHTTPErrorHandler Echo error handler", err)
 		errorPage := fmt.Sprintf("site/%d.html", code)
 		logrus.WithFields(logrus.Fields{
 			"errorPage":  errorPage,

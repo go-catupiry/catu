@@ -146,11 +146,9 @@ func (r *AppContext) SetAuthenticatedUserAndFillRoles(user UserInterface) {
 }
 
 func (r *AppContext) Can(permission string) bool {
-	// roles := r.GetAuthenticatedRoles()
-	// log.Println("roles:", roles)
-	// return acl.Can(permission, *roles)
-	// TODO!
-	return true
+	app := GetApp()
+	roles := r.GetAuthenticatedRoles()
+	return app.Can(permission, *roles)
 }
 
 func NewAppContext() AppContext {

@@ -74,7 +74,7 @@ func (r *App) Bootstrap() error {
 
 	logrus.Debug("catu.App.Bootstrap running")
 	// default roles and permissions, override it on your app
-	json.Unmarshal([]byte(r.Configuration.Get("Roles")), &r.RolesList)
+	json.Unmarshal([]byte(configuration.Roles), &r.RolesList)
 
 	for _, p := range r.Plugins {
 		err = p.Init(r)

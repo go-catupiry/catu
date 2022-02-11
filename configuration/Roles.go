@@ -51,6 +51,7 @@ var Roles = `{
 	"find_wallet-investment",
 	"create_wallet-investment",
 	"findOne_context_widget",
+	"find_widget",
 	"find_quote-update-news",
 	"find_quote-daily-news",
 	"find_company-relevant-fact",
@@ -95,6 +96,7 @@ var Roles = `{
 	"find_cma-news",
 	"find_b3-news",
 	"findOne_context_widget",
+	"find_widget",
 	"find_quote-update-news",
 	"find_quote-daily-news",
 	"find_company-relevant-fact"
