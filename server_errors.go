@@ -24,7 +24,7 @@ type ValidationFieldError struct {
 
 func CustomHTTPErrorHandler(err error, c echo.Context) {
 	logrus.WithFields(logrus.Fields{
-		"err": err,
+		"err": fmt.Sprintf("%+v\n", err),
 	}).Debug("catu.CustomHTTPErrorHandler running")
 
 	code := 0
@@ -71,7 +71,7 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 
 func forbiddenErrorHandler(err error, c echo.Context) error {
 	logrus.WithFields(logrus.Fields{
-		"err":  err,
+		"err":  fmt.Sprintf("%+v\n", err),
 		"code": "403",
 	}).Debug("catu.forbiddenErrorHandler running")
 
@@ -96,7 +96,7 @@ func forbiddenErrorHandler(err error, c echo.Context) error {
 
 func unAuthorizedErrorHandler(err error, c echo.Context) error {
 	logrus.WithFields(logrus.Fields{
-		"err":  err,
+		"err":  fmt.Sprintf("%+v\n", err),
 		"code": "401",
 	}).Debug("catu.unAuthorizedErrorHandler running")
 
@@ -122,7 +122,7 @@ func unAuthorizedErrorHandler(err error, c echo.Context) error {
 
 func notFoundErrorHandler(err error, c echo.Context) error {
 	logrus.WithFields(logrus.Fields{
-		"err":  err,
+		"err":  fmt.Sprintf("%+v\n", err),
 		"code": "404",
 	}).Debug("catu.notFoundErrorHandler running")
 
@@ -146,7 +146,7 @@ func notFoundErrorHandler(err error, c echo.Context) error {
 
 func validationError(ve validator.ValidationErrors, err error, c echo.Context) error {
 	logrus.WithFields(logrus.Fields{
-		"err":  err,
+		"err":  fmt.Sprintf("%+v\n", err),
 		"code": "400",
 	}).Debug("catu.validationError running")
 
