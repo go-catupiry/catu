@@ -23,6 +23,10 @@ type ValidationFieldError struct {
 }
 
 func CustomHTTPErrorHandler(err error, c echo.Context) {
+	logrus.WithFields(logrus.Fields{
+		"err": err,
+	}).Debug("catu.CustomHTTPErrorHandler running")
+
 	code := 0
 	if he, ok := err.(*echo.HTTPError); ok {
 		code = he.Code
@@ -66,6 +70,11 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 }
 
 func forbiddenErrorHandler(err error, c echo.Context) error {
+	logrus.WithFields(logrus.Fields{
+		"err":  err,
+		"code": "403",
+	}).Debug("catu.forbiddenErrorHandler running")
+
 	ctx := c.Get("app").(*AppContext)
 
 	switch ctx.ResponseContentType {
@@ -86,6 +95,11 @@ func forbiddenErrorHandler(err error, c echo.Context) error {
 }
 
 func unAuthorizedErrorHandler(err error, c echo.Context) error {
+	logrus.WithFields(logrus.Fields{
+		"err":  err,
+		"code": "401",
+	}).Debug("catu.unAuthorizedErrorHandler running")
+
 	ctx := c.Get("app").(*AppContext)
 
 	switch ctx.ResponseContentType {
@@ -107,6 +121,11 @@ func unAuthorizedErrorHandler(err error, c echo.Context) error {
 }
 
 func notFoundErrorHandler(err error, c echo.Context) error {
+	logrus.WithFields(logrus.Fields{
+		"err":  err,
+		"code": "404",
+	}).Debug("catu.notFoundErrorHandler running")
+
 	ctx := c.Get("app").(*AppContext)
 
 	switch ctx.ResponseContentType {
@@ -126,6 +145,11 @@ func notFoundErrorHandler(err error, c echo.Context) error {
 }
 
 func validationError(ve validator.ValidationErrors, err error, c echo.Context) error {
+	logrus.WithFields(logrus.Fields{
+		"err":  err,
+		"code": "400",
+	}).Debug("catu.validationError running")
+
 	ctx := c.Get("app").(*AppContext)
 
 	resp := ValidationResponse{}
