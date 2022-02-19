@@ -23,8 +23,8 @@ func BindMiddlewares(app *App, p *Plugin) {
 	// router.Use(mw.Recover())
 	router.Use(middleware.Gzip())
 	router.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowCredentials: true,
-		MaxAge:           18000, // seccounds
+		AllowCredentials: app.Configuration.GetBoolF("CORS_ALLOW_CREDENTIALS", true),
+		MaxAge:           app.Configuration.GetIntF("CORS_MAX_AGE", 18000), // seccounds
 	}))
 
 	if goEnv == "dev" {
