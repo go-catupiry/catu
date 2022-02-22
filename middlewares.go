@@ -1,6 +1,7 @@
 package catu
 
 import (
+	"net/http"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -17,6 +18,9 @@ func BindMiddlewares(app *App, p *Plugin) {
 	router := app.GetRouter()
 
 	router.Pre(initAppCtx())
+	router.Pre(middleware.RemoveTrailingSlashWithConfig(middleware.TrailingSlashConfig{
+		RedirectCode: http.StatusMovedPermanently,
+	}))
 	router.Pre(extensionMiddleware())
 	router.Pre(contentNegotiationMiddleware())
 
