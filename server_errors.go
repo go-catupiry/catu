@@ -22,14 +22,31 @@ type ValidationFieldError struct {
 	Message string `json:"message"`
 }
 
+type HTTPError struct {
+	Code    int         `json:"code"`
+	Message interface{} `json:"message"`
+}
+
+// func NewHTTPError(code, message string) *HTTPError {
+// 	return HTTPError{ Code: code, Message: message }
+// }
+
+// type NotFoundResponseError
+
 func CustomHTTPErrorHandler(err error, c echo.Context) {
 	logrus.WithFields(logrus.Fields{
 		"err": fmt.Sprintf("%+v\n", err),
 	}).Debug("catu.CustomHTTPErrorHandler running")
 
+	ctx := c.Get("app").(*AppContext)
+
 	code := 0
 	if he, ok := err.(*echo.HTTPError); ok {
 		code = he.Code
+		if ctx.ResponseContentType == "application/json" {
+			c.JSON(he.Code, &HTTPError{Code: he.Code, Message: he.Message})
+			return
+		}
 	}
 
 	if ve, ok := err.(validator.ValidationErrors); ok {
@@ -39,10 +56,6 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 
 	if code == 0 && err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		code = 404
-	}
-
-	if code == 0 {
-		code = 500 // default
 	}
 
 	switch code {
@@ -55,17 +68,11 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 	case 500:
 		internalServerErrorHandler(err, c)
 	default:
-		errorPage := fmt.Sprintf("site/%d.html", code)
 		logrus.WithFields(logrus.Fields{
-			"errorPage":  errorPage,
 			"statusCode": code,
 			"error":      fmt.Sprintf("%+v\n", err),
-		}).Warn("customHTTPErrorHandler unknow error status code")
-
-		if err := c.File(errorPage); err != nil {
-			c.Logger().Error(err)
-		}
-		c.Logger().Error(err)
+		}).Warn("customHTTPErrorHandler unknown error status code")
+		c.JSON(http.StatusInternalServerError, &HTTPError{Code: 500, Message: "Unknown Error"})
 	}
 }
 
@@ -139,7 +146,7 @@ func notFoundErrorHandler(err error, c echo.Context) error {
 		}
 		return nil
 	default:
-		c.JSON(http.StatusNotFound, make(map[string]string))
+		c.JSON(http.StatusNotFound, &HTTPError{Code: http.StatusNotFound, Message: "Not Found"})
 		return nil
 	}
 }
@@ -207,10 +214,10 @@ func internalServerErrorHandler(err error, c echo.Context) error {
 		return nil
 	default:
 		if he, ok := err.(*echo.HTTPError); ok {
-			return c.JSON(http.StatusInternalServerError, he)
+			return c.JSON(he.Code, &HTTPError{Code: he.Code, Message: he.Message})
 		}
 
-		c.JSON(http.StatusInternalServerError, make(map[string]string))
+		c.JSON(http.StatusInternalServerError, &HTTPError{Code: http.StatusInternalServerError, Message: "Internal Server Error"})
 		return nil
 	}
 }
