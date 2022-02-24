@@ -81,12 +81,16 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 }
 
 func forbiddenErrorHandler(err error, c echo.Context) error {
-	logrus.WithFields(logrus.Fields{
-		"err":  fmt.Sprintf("%+v\n", err),
-		"code": "403",
-	}).Debug("catu.forbiddenErrorHandler running")
-
 	ctx := c.Get("app").(*AppContext)
+
+	logrus.WithFields(logrus.Fields{
+		"err":               fmt.Sprintf("%+v\n", err),
+		"code":              "403",
+		"path":              c.Path(),
+		"method":            c.Request().Method,
+		"AuthenticatedUser": ctx.AuthenticatedUser,
+		"roles":             ctx.GetAuthenticatedRoles(),
+	}).Debug("catu.forbiddenErrorHandler running")
 
 	switch ctx.ResponseContentType {
 	case "text/html":
@@ -106,12 +110,16 @@ func forbiddenErrorHandler(err error, c echo.Context) error {
 }
 
 func unAuthorizedErrorHandler(err error, c echo.Context) error {
-	logrus.WithFields(logrus.Fields{
-		"err":  fmt.Sprintf("%+v\n", err),
-		"code": "401",
-	}).Debug("catu.unAuthorizedErrorHandler running")
-
 	ctx := c.Get("app").(*AppContext)
+
+	logrus.WithFields(logrus.Fields{
+		"err":               fmt.Sprintf("%+v\n", err),
+		"code":              "401",
+		"path":              c.Path(),
+		"method":            c.Request().Method,
+		"AuthenticatedUser": ctx.AuthenticatedUser,
+		"roles":             ctx.GetAuthenticatedRoles(),
+	}).Info("catu.unAuthorizedErrorHandler running")
 
 	switch ctx.ResponseContentType {
 	case "text/html":
@@ -201,8 +209,12 @@ func internalServerErrorHandler(err error, c echo.Context) error {
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"err":  fmt.Sprintf("%+v\n", err),
-		"code": code,
+		"err":               fmt.Sprintf("%+v\n", err),
+		"code":              code,
+		"path":              c.Path(),
+		"method":            c.Request().Method,
+		"AuthenticatedUser": ctx.AuthenticatedUser,
+		"roles":             ctx.GetAuthenticatedRoles(),
 	}).Warn("internalServerErrorHandler error")
 
 	switch ctx.ResponseContentType {
