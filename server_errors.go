@@ -69,8 +69,12 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 		internalServerErrorHandler(err, c)
 	default:
 		logrus.WithFields(logrus.Fields{
-			"statusCode": code,
-			"error":      fmt.Sprintf("%+v\n", err),
+			"error":             fmt.Sprintf("%+v\n", err),
+			"statusCode":        code,
+			"path":              c.Path(),
+			"method":            c.Request().Method,
+			"AuthenticatedUser": ctx.AuthenticatedUser,
+			"roles":             ctx.GetAuthenticatedRoles(),
 		}).Warn("customHTTPErrorHandler unknown error status code")
 		c.JSON(http.StatusInternalServerError, &HTTPError{Code: 500, Message: "Unknown Error"})
 	}

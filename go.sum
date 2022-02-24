@@ -16,10 +16,6 @@ github.com/cuducos/go-cnpj v0.0.1/go.mod h1:Oe0M530eHl9eXExbNWriqTD9kMv618ScjlGt
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/fabienm/go-logrus-formatters v1.0.0 h1:kXRfZ/RWqicPOagDNQ+HttB3CWprencWx1cRfKxbgXM=
-github.com/fabienm/go-logrus-formatters v1.0.0/go.mod h1:QBlZ0LejpPDBjnKf+2u30xbAHSosPHP+dV/wxQlqsPw=
-github.com/go-catupiry/query_parser v0.0.1 h1:8tUfkppFdqoJLmDQeqJ6PEKzZQHhDLgqEjztSavUyoA=
-github.com/go-catupiry/query_parser v0.0.1/go.mod h1:oOEC3uU2jnCocnMxHtaXmqgmaXk3EF7afRmBBgTEaEA=
 github.com/go-catupiry/query_parser v0.0.2 h1:jpe8QbtslwbneGMtErRY3K8jhPOhYL3+TjaWJ6DoH24=
 github.com/go-catupiry/query_parser v0.0.2/go.mod h1:oOEC3uU2jnCocnMxHtaXmqgmaXk3EF7afRmBBgTEaEA=
 github.com/go-playground/assert/v2 v2.0.1 h1:MsBgLAaY856+nPRTKrp3/OZK38U/wa0CcBYNjji3q3A=

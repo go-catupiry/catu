@@ -3,7 +3,6 @@ package logger
 import (
 	"os"
 
-	formatters "github.com/fabienm/go-logrus-formatters"
 	"github.com/go-catupiry/catu/configuration"
 	"github.com/sirupsen/logrus"
 )
@@ -11,17 +10,13 @@ import (
 func Init() {
 	GO_ENV := configuration.GetEnv("GO_ENV", "development")
 	if GO_ENV != "development" {
-		hostname, _ := os.Hostname()
-		// Log as GELF instead of the default ASCII formatter.
-		logrus.SetFormatter(formatters.NewGelf(hostname))
-
-		// logrus.SetFormatter(&logrus.JSONFormatter{
-		// 	DataKey: "data",
-		// 	FieldMap: logrus.FieldMap{
-		// 		logrus.FieldKeyTime: "timestamp",
-		// 		logrus.FieldKeyMsg:  "message",
-		// 	},
-		// })
+		logrus.SetFormatter(&logrus.JSONFormatter{
+			DataKey: "data",
+			FieldMap: logrus.FieldMap{
+				logrus.FieldKeyTime: "timestamp",
+				logrus.FieldKeyMsg:  "message",
+			},
+		})
 	}
 
 	// Output to stdout instead of the default stderr

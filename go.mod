@@ -5,7 +5,6 @@ go 1.17
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/cuducos/go-cnpj v0.0.1
-	github.com/fabienm/go-logrus-formatters v1.0.0
 	github.com/go-catupiry/query_parser v0.0.2
 	github.com/go-playground/validator/v10 v10.10.0
 	github.com/gookit/event v1.0.5
