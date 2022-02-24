@@ -6,6 +6,7 @@ require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/cuducos/go-cnpj v0.0.1
 	github.com/fabienm/go-logrus-formatters v1.0.0
+	github.com/go-catupiry/query_parser v0.0.1
 	github.com/go-playground/validator/v10 v10.10.0
 	github.com/gookit/event v1.0.5
 	github.com/gosimple/slug v1.12.0
@@ -13,15 +14,15 @@ require (
 	github.com/labstack/echo/v4 v4.6.1
 	github.com/leekchan/accounting v1.0.0
 	github.com/microcosm-cc/bluemonday v1.0.17
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	github.com/shopspring/decimal v1.3.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cast v1.4.1
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/text v0.3.7
 	gorm.io/driver/mysql v1.2.3
-	gorm.io/driver/sqlite v1.2.6
-	gorm.io/gorm v1.22.4
+	gorm.io/driver/sqlite v1.3.1
+	gorm.io/gorm v1.23.1
 )
 
 require (
@@ -40,7 +41,7 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.3 // indirect
+	github.com/jinzhu/now v1.1.4 // indirect
 	github.com/labstack/gommon v0.3.0 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect

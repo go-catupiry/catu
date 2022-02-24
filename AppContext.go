@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-catupiry/catu/helpers"
 	"github.com/go-catupiry/catu/pagination"
+	"github.com/go-catupiry/query_parser"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 )
@@ -31,7 +32,7 @@ type AppContext struct {
 	BodyClass           []string
 	Content             template.HTML
 	ContentData         map[string]interface{}
-	Query               Query
+	Query               query_parser.QueryInterface
 	Pager               *pagination.Pager
 	MetaTags            HTMLMetaTags
 	ResponseContentType string
@@ -165,6 +166,7 @@ func NewAppContext() AppContext {
 		ResponseContentType: "text/html",
 		Layout:              "site/layouts/default",
 		ENV:                 app.Configuration.GetF("GO_ENV", "development"),
+		Query:               query_parser.NewQuery(50),
 	}
 
 	ctx.Pager = pagination.NewPager()
