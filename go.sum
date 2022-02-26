@@ -16,8 +16,8 @@ github.com/cuducos/go-cnpj v0.0.1/go.mod h1:Oe0M530eHl9eXExbNWriqTD9kMv618ScjlGt
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/go-catupiry/query_parser v0.0.2 h1:jpe8QbtslwbneGMtErRY3K8jhPOhYL3+TjaWJ6DoH24=
-github.com/go-catupiry/query_parser v0.0.2/go.mod h1:oOEC3uU2jnCocnMxHtaXmqgmaXk3EF7afRmBBgTEaEA=
+github.com/go-catupiry/query_parser_to_db v0.0.3 h1:DSIEvkpuhlHEE0Z4FVQp9bWnHLiuFtat5Byh02FftWk=
+github.com/go-catupiry/query_parser_to_db v0.0.3/go.mod h1:/gB7YPOkWUaDLtCVYz07hZHmp0FughnurJ64LkrQwI8=
 github.com/go-playground/assert/v2 v2.0.1 h1:MsBgLAaY856+nPRTKrp3/OZK38U/wa0CcBYNjji3q3A=
 github.com/go-playground/assert/v2 v2.0.1/go.mod h1:VDjEfimB/XKnb+ZQfWdccd7VUvScMdVu0Titje2rxJ4=
 github.com/go-playground/locales v0.14.0 h1:u50s323jtVGugKlcYeyzC0etD1HifMjqmJqb8WugfUU=
