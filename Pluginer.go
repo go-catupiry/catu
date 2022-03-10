@@ -12,7 +12,7 @@ type Pluginer interface {
 	// BindRoutes(app *App) error
 	// AfterBindRoutes(app *App) error
 
-	SetTemplateFuncMap(app *App) error
+	// SetTemplateFuncMap(app *App) error
 
 	// OnBootstrap(app *App) error
 }
