@@ -22,9 +22,10 @@ import (
 // }
 
 type TemplateCTX struct {
-	Ctx     interface{}
-	Record  interface{}
-	Records interface{}
+	EchoContext echo.Context
+	Ctx         interface{}
+	Record      interface{}
+	Records     interface{}
 }
 
 type TemplateRenderer struct {
@@ -44,6 +45,7 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 		fmt.Printf("String: %v", v)
 	default:
 		htmlContext := data.(*TemplateCTX)
+		htmlContext.EchoContext = c
 
 		logrus.WithFields(logrus.Fields{
 			"name":          name,
