@@ -121,16 +121,8 @@ func (r *App) StartHTTPServer() error {
 		port = "8080"
 	}
 
-	// data, err := json.MarshalIndent(r.GetRouter().Routes(), "", "  ")
-	// if err != nil {
-	// 	return err
-	// }
-	// log.Println("routes", string(data))
-
 	logrus.Info("Server listening on port " + port)
-	http.ListenAndServe(":"+port, r.GetRouter())
-
-	return nil
+	return http.ListenAndServe(":"+port, r.GetRouter())
 }
 
 func (r *App) SetRouterGroup(name, path string) *echo.Group {
