@@ -294,6 +294,7 @@ func newApp() *App {
 	app.routerGroups = make(map[string]*echo.Group)
 	app.apiRouterGroups = make(map[string]*echo.Group)
 
+	app.Resources = make(map[string]*HTTPResource)
 	app.router = echo.New()
 
 	app.router.Binder = &CustomBinder{}
