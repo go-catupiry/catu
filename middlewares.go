@@ -40,7 +40,7 @@ func BindMiddlewares(app *App, p *Plugin) {
 func initAppCtx() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			ctx := NewRequestAppContext(c)
+			ctx := NewRequestRequestContext(c)
 			c.Set("app", &ctx)
 
 			logrus.WithFields(logrus.Fields{
@@ -68,7 +68,7 @@ func extensionMiddleware() echo.MiddlewareFunc {
 				return next(c)
 			}
 
-			ctx := c.Get("app").(*AppContext)
+			ctx := c.Get("app").(*RequestContext)
 			oldUrl := req.URL.Path
 
 			logrus.WithFields(logrus.Fields{
@@ -108,7 +108,7 @@ func extensionMiddleware() echo.MiddlewareFunc {
 func contentNegotiationMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			ctx := c.Get("app").(*AppContext)
+			ctx := c.Get("app").(*RequestContext)
 			if ctx.ResponseContentType != "text/html" {
 				// already filled
 				return next(c)

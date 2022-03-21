@@ -12,6 +12,8 @@ import (
 func TestContentNegotiationMiddleware(t *testing.T) {
 	assert := assert.New(t)
 
+	GetTestAppInstance()
+
 	url := "/symbol"
 	e := echo.New()
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -20,7 +22,7 @@ func TestContentNegotiationMiddleware(t *testing.T) {
 	}
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
-	ctx := NewRequestAppContext(c)
+	ctx := NewRequestRequestContext(c)
 	c.Set("app", &ctx)
 
 	t.Run("Should start with text/html", func(t *testing.T) {

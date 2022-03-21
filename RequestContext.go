@@ -13,7 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type AppContext struct {
+type RequestContext struct {
 	PathBeforeAlias string
 	Protocol        string
 	Domain          string
@@ -44,48 +44,48 @@ type SessionData struct {
 	UserID string
 }
 
-func (r *AppContext) Set(name string, value interface{}) {
+func (r *RequestContext) Set(name string, value interface{}) {
 	r.ContentData[name] = value
 }
 
-func (r *AppContext) Get(name string) interface{} {
+func (r *RequestContext) Get(name string) interface{} {
 	return r.ContentData[name]
 }
 
-func (r *AppContext) GetString(name string) string {
+func (r *RequestContext) GetString(name string) string {
 	if r.ContentData[name] == nil {
 		return ""
 	}
 	return r.ContentData[name].(string)
 }
 
-func (r *AppContext) GetBool(name string) bool {
+func (r *RequestContext) GetBool(name string) bool {
 	return r.ContentData[name].(bool)
 }
 
-func (r *AppContext) GetStringMap(name string) []string {
+func (r *RequestContext) GetStringMap(name string) []string {
 	return r.ContentData[name].([]string)
 }
 
-func (r *AppContext) GetTemplateHTML(name string) template.HTML {
+func (r *RequestContext) GetTemplateHTML(name string) template.HTML {
 	return r.ContentData[name].(template.HTML)
 }
 
-func (r *AppContext) RenderPagination(name string) string {
+func (r *RequestContext) RenderPagination(name string) string {
 	html := ""
 
 	return html
 }
 
 // Render one template, alias to app.templates.ExecuteTemplate()
-func (r *AppContext) Render(wr io.Writer, name string, data interface{}) error {
+func (r *RequestContext) Render(wr io.Writer, name string, data interface{}) error {
 	app := GetApp()
 
 	return app.GetTemplates().ExecuteTemplate(wr, name, data)
 }
 
 // Add a body class string checking if is unique
-func (r *AppContext) AddBodyClass(class string) {
+func (r *RequestContext) AddBodyClass(class string) {
 	if helpers.SliceContains(r.BodyClass, class) {
 		return
 	}
@@ -94,7 +94,7 @@ func (r *AppContext) AddBodyClass(class string) {
 }
 
 // Remove a body class string checking if is unique
-func (r *AppContext) RemoveBodyClass(class string) {
+func (r *RequestContext) RemoveBodyClass(class string) {
 	if !helpers.SliceContains(r.BodyClass, class) {
 		return
 	}
@@ -103,15 +103,15 @@ func (r *AppContext) RemoveBodyClass(class string) {
 }
 
 // Get body class as string,
-func (r *AppContext) GetBodyClassText() string {
+func (r *RequestContext) GetBodyClassText() string {
 	return strings.Join(r.BodyClass, " ")
 }
 
-func (r *AppContext) GetLimit() int {
+func (r *RequestContext) GetLimit() int {
 	return int(r.Pager.Limit)
 }
 
-func (r *AppContext) GetOffset() int {
+func (r *RequestContext) GetOffset() int {
 	page := int(r.Pager.Page)
 
 	if page < 2 {
@@ -122,11 +122,11 @@ func (r *AppContext) GetOffset() int {
 	return limit * (page - 1)
 }
 
-func (r *AppContext) ParseQueryFromReq(c echo.Context) error {
+func (r *RequestContext) ParseQueryFromReq(c echo.Context) error {
 	return nil
 }
 
-func (r *AppContext) GetAuthenticatedRoles() *[]string {
+func (r *RequestContext) GetAuthenticatedRoles() *[]string {
 	if r.IsAuthenticated {
 		return &r.Roles
 	}
@@ -134,31 +134,31 @@ func (r *AppContext) GetAuthenticatedRoles() *[]string {
 	return &[]string{"unAuthenticated"}
 }
 
-func (r *AppContext) SetAuthenticatedUser(user UserInterface) {
+func (r *RequestContext) SetAuthenticatedUser(user UserInterface) {
 	r.AuthenticatedUser = user
 	r.IsAuthenticated = true
 }
 
-func (r *AppContext) SetAuthenticatedUserAndFillRoles(user UserInterface) {
+func (r *RequestContext) SetAuthenticatedUserAndFillRoles(user UserInterface) {
 	r.SetAuthenticatedUser(user)
 	r.Roles = user.GetRoles()
 	r.Roles = append(r.Roles, "authenticated")
 }
 
-func (r *AppContext) Can(permission string) bool {
+func (r *RequestContext) Can(permission string) bool {
 	app := GetApp()
 	roles := r.GetAuthenticatedRoles()
 	return app.Can(permission, *roles)
 }
 
-func NewAppContext() AppContext {
+func NewRequestContext() RequestContext {
 	app := GetApp()
 
 	port := app.Configuration.GetF("PORT", "8080")
 	protocol := app.Configuration.GetF("PROTOCOL", "http")
 	domain := app.Configuration.GetF("DOMAIN", "localhost")
 
-	ctx := AppContext{
+	ctx := RequestContext{
 		Protocol:  protocol,
 		Domain:    domain,
 		AppOrigin: app.Configuration.GetF("APP_ORIGIN", protocol+"://"+domain+":"+port),
@@ -180,9 +180,9 @@ func NewAppContext() AppContext {
 	return ctx
 }
 
-func NewRequestAppContext(c echo.Context) AppContext {
+func NewRequestRequestContext(c echo.Context) RequestContext {
 	app := GetApp()
-	ctx := NewAppContext()
+	ctx := NewRequestContext()
 	ctx.Pager.CurrentUrl = c.Request().URL.Path
 
 	if c.Request().Method != "GET" {
@@ -203,7 +203,7 @@ func NewRequestAppContext(c echo.Context) AppContext {
 				logrus.WithFields(logrus.Fields{
 					"key":   key,
 					"param": param,
-				}).Error("NewRequestAppContext invalid query param limit")
+				}).Error("NewRequestRequestContext invalid query param limit")
 				continue
 			}
 			if queryLimit > 0 && queryLimit < limitMax {
@@ -238,7 +238,7 @@ func GetQueryIntFromReq(param string, c echo.Context) int {
 				"path":  c.Path(),
 				"param": param,
 				"page":  page,
-			}).Warn("NewRequestAppContext invalid page query param")
+			}).Warn("NewRequestRequestContext invalid page query param")
 		}
 	}
 
@@ -267,7 +267,7 @@ func GetPathLimitFromReq() {
 
 }
 
-func (r *AppContext) RenderMetaTags() template.HTML {
+func (r *RequestContext) RenderMetaTags() template.HTML {
 	app := GetApp()
 	html := ""
 

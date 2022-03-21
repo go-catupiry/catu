@@ -18,7 +18,7 @@ import (
 )
 
 // type tplWrapper struct {
-// 	Ctx *AppContext
+// 	Ctx *RequestContext
 // }
 
 type TemplateCTX struct {
@@ -63,7 +63,7 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 			return err
 		}
 
-		ctx := htmlContext.Ctx.(*AppContext)
+		ctx := htmlContext.Ctx.(*RequestContext)
 		ctx.Content = template.HTML(contentBuffer.String())
 
 		var layoutBuffer bytes.Buffer
