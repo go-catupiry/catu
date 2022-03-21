@@ -41,7 +41,8 @@ type App struct {
 
 	Models map[string]interface{}
 
-	router *echo.Echo
+	router    *echo.Echo
+	Resources map[string]*HTTPResource
 
 	routerGroups    map[string]*echo.Group
 	apiRouterGroups map[string]*echo.Group
@@ -145,6 +146,26 @@ func (r *App) SetAPIRouterGroup(name, path string) *echo.Group {
 
 func (r *App) GetAPIRouterGroup(name string) *echo.Group {
 	return r.apiRouterGroups[name]
+}
+
+// Set Resource CRUD.
+// Now we only supports HTTP Resources / Ex Rest
+func (r *App) SetResource(name string, httpController HTTPController, routerGroup *echo.Group) error {
+	routerGroup.GET("", httpController.Query)
+	routerGroup.GET("/count", httpController.Count)
+	routerGroup.POST("", httpController.Create)
+	routerGroup.GET("/:id", httpController.FindOne)
+	routerGroup.POST("/:id", httpController.Update)
+	routerGroup.PATCH("/:id", httpController.Update)
+	routerGroup.PUT("/:id", httpController.Update)
+	routerGroup.DELETE("/:id", httpController.Delete)
+
+	r.Resources[name] = &HTTPResource{
+		Name:       name,
+		Controller: &httpController,
+	}
+
+	return nil
 }
 
 func (r *App) InitDatabase(name, engine string, isDefault bool) error {
