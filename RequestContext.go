@@ -176,6 +176,7 @@ func NewRequestContext() RequestContext {
 	ctx.MetaTags.Title = app.Configuration.Get("SITE_NAME")
 	ctx.MetaTags.Description = app.Configuration.Get("SITE_DESCRIPTION")
 	ctx.MetaTags.ImageURL = app.Configuration.Get("SITE_IMAGE_URL")
+	ctx.MetaTags.SiteName = app.Configuration.Get("SITE_NAME")
 
 	return ctx
 }
@@ -290,7 +291,7 @@ func (r *RequestContext) RenderMetaTags() template.HTML {
 
 	if r.MetaTags.Description != "" {
 		html += `<meta property="og:description" content="` + r.MetaTags.Description + `" />`
-		html += `<meta content="` + r.MetaTags.Description + `">`
+		html += `<meta name="description" content="` + r.MetaTags.Description + `">`
 		html += `<meta content="` + r.MetaTags.Description + `" name="twitter:description">`
 	}
 

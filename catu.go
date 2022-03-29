@@ -1,6 +1,9 @@
 package catu
 
 import (
+	"log"
+	"os"
+
 	"github.com/go-catupiry/catu/configuration"
 	"github.com/joho/godotenv"
 	"gorm.io/gorm"
@@ -22,7 +25,18 @@ func Init() *App {
 }
 
 func initDotEnvConfigSupport() {
-	godotenv.Load()
+	env, _ := os.LookupEnv("GO_ENV")
+
+	if env == "" {
+		env = "dev"
+	}
+
+	if _, err := os.Stat(env + ".env"); err != nil {
+		godotenv.Load(".env")
+	} else {
+		log.Println("exists!")
+		godotenv.Load(".env", env+".env")
+	}
 }
 
 func GetApp() *App {
