@@ -1,11 +1,12 @@
 package http_client
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -25,8 +26,10 @@ func GetPageHTML(url string, headers http.Header) (string, error) {
 	rdrBody := io.Reader(resp.Body)
 	bodyBytes, err := ioutil.ReadAll(rdrBody)
 	if err != nil {
-		log.Println(err)
-		return "", err
+		logrus.WithFields(logrus.Fields{
+			"err": fmt.Sprintf("%+v\n", err),
+		}).Debug("catu.GetPageHTML error")
+		return "", errors.Wrap(err, "GetPageHTML error")
 	}
 
 	return string(bodyBytes), nil

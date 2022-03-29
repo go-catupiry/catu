@@ -16,8 +16,6 @@ func TestSliceRemove(t *testing.T) {
 
 		newList, removed := SliceRemove(list, stringToRemove)
 
-		// log.Println("removed", removed, list, newList)
-
 		assert.EqualValues(true, removed)
 		assert.EqualValues(3, len(newList))
 		assert.EqualValues(expectedList, newList)

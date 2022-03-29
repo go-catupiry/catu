@@ -1,7 +1,6 @@
 package catu
 
 import (
-	"log"
 	"os"
 
 	"github.com/go-catupiry/catu/configuration"
@@ -34,7 +33,6 @@ func initDotEnvConfigSupport() {
 	if _, err := os.Stat(env + ".env"); err != nil {
 		godotenv.Load(".env")
 	} else {
-		log.Println("exists!")
 		godotenv.Load(".env", env+".env")
 	}
 }

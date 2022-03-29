@@ -11,8 +11,5 @@ func (cb *CustomBinder) Bind(i interface{}, c echo.Context) (err error) {
 		return
 	}
 
-	// Then define your custom implementation
-	println("And now for some logic")
-
 	return
 }
