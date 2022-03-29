@@ -173,9 +173,9 @@ func NewRequestContext() RequestContext {
 	ctx.Pager.Limit, _ = strconv.ParseInt(app.Configuration.GetF("PAGER_LIMIT", "20"), 10, 64)
 	ctx.ContentData = map[string]interface{}{}
 
-	ctx.MetaTags.Title = "Monitor do Mercado"
-	ctx.MetaTags.Description = " Com tecnologia de ponta, o site Monitor do Mercado reúne as mais importantes informações sobre investimentos."
-	ctx.MetaTags.ImageURL = "https://storage.googleapis.com/mm-images/static/favicon.ico"
+	ctx.MetaTags.Title = app.Configuration.Get("SITE_NAME")
+	ctx.MetaTags.Description = app.Configuration.Get("SITE_DESCRIPTION")
+	ctx.MetaTags.ImageURL = app.Configuration.Get("SITE_IMAGE_URL")
 
 	return ctx
 }
