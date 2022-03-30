@@ -23,17 +23,17 @@ func Init() *App {
 	return appInstance
 }
 
+// Init doc env config with default development.env configuration file
+// The configuration file pattern is: [environment].env
 func initDotEnvConfigSupport() {
 	env, _ := os.LookupEnv("GO_ENV")
 
 	if env == "" {
-		env = "dev"
+		env = "development"
 	}
 
-	if _, err := os.Stat(env + ".env"); err != nil {
-		godotenv.Load(".env")
-	} else {
-		godotenv.Load(".env", env+".env")
+	if _, err := os.Stat(env + ".env"); err == nil {
+		godotenv.Load(env + ".env")
 	}
 }
 
