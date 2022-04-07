@@ -283,6 +283,16 @@ func (r *App) LoadTemplates() error {
 	return nil
 }
 
+// Run migrations
+func (r *App) Migrate() error {
+	err, _ := r.Events.Fire("migrate", event.M{"app": r})
+	if err != nil {
+		return errors.Wrap(err, "App.Migrate migrate error")
+	}
+
+	return nil
+}
+
 func newApp() *App {
 	var app App
 

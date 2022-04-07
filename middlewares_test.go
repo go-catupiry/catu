@@ -23,7 +23,7 @@ func TestContentNegotiationMiddleware(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 	ctx := NewRequestRequestContext(c)
-	c.Set("app", &ctx)
+	c.Set("ctx", &ctx)
 
 	t.Run("Should start with text/html", func(t *testing.T) {
 		assert.Equal("text/html", ctx.ResponseContentType)

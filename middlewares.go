@@ -41,13 +41,13 @@ func initAppCtx() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			ctx := NewRequestRequestContext(c)
-			c.Set("app", &ctx)
+			c.Set("ctx", &ctx)
 
 			logrus.WithFields(logrus.Fields{
 				"URL":    c.Request().URL,
 				"method": c.Request().Method,
 				"header": c.Request().Header,
-			}).Debug("initAppCtx init")
+			}).Debug("init catu ctx init")
 
 			return next(c)
 		}
@@ -68,7 +68,7 @@ func extensionMiddleware() echo.MiddlewareFunc {
 				return next(c)
 			}
 
-			ctx := c.Get("app").(*RequestContext)
+			ctx := c.Get("ctx").(*RequestContext)
 			oldUrl := req.URL.Path
 
 			logrus.WithFields(logrus.Fields{
@@ -108,7 +108,7 @@ func extensionMiddleware() echo.MiddlewareFunc {
 func contentNegotiationMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			ctx := c.Get("app").(*RequestContext)
+			ctx := c.Get("ctx").(*RequestContext)
 			if ctx.ResponseContentType != "text/html" {
 				// already filled
 				return next(c)

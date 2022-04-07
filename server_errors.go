@@ -38,7 +38,7 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 		"err": fmt.Sprintf("%+v\n", err),
 	}).Debug("catu.CustomHTTPErrorHandler running")
 
-	ctx := c.Get("app").(*RequestContext)
+	ctx := c.Get("ctx").(*RequestContext)
 
 	code := 0
 	if he, ok := err.(*echo.HTTPError); ok {
@@ -81,7 +81,7 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 }
 
 func forbiddenErrorHandler(err error, c echo.Context) error {
-	ctx := c.Get("app").(*RequestContext)
+	ctx := c.Get("ctx").(*RequestContext)
 
 	logrus.WithFields(logrus.Fields{
 		"err":               fmt.Sprintf("%+v\n", err),
@@ -110,7 +110,7 @@ func forbiddenErrorHandler(err error, c echo.Context) error {
 }
 
 func unAuthorizedErrorHandler(err error, c echo.Context) error {
-	ctx := c.Get("app").(*RequestContext)
+	ctx := c.Get("ctx").(*RequestContext)
 
 	logrus.WithFields(logrus.Fields{
 		"err":               fmt.Sprintf("%+v\n", err),
@@ -145,7 +145,7 @@ func notFoundErrorHandler(err error, c echo.Context) error {
 		"code": "404",
 	}).Debug("catu.notFoundErrorHandler running")
 
-	ctx := c.Get("app").(*RequestContext)
+	ctx := c.Get("ctx").(*RequestContext)
 
 	switch ctx.ResponseContentType {
 	case "text/html":
@@ -169,7 +169,7 @@ func validationError(ve validator.ValidationErrors, err error, c echo.Context) e
 		"code": "400",
 	}).Debug("catu.validationError running")
 
-	ctx := c.Get("app").(*RequestContext)
+	ctx := c.Get("ctx").(*RequestContext)
 
 	resp := ValidationResponse{}
 
@@ -201,7 +201,7 @@ func validationError(ve validator.ValidationErrors, err error, c echo.Context) e
 }
 
 func internalServerErrorHandler(err error, c echo.Context) error {
-	ctx := c.Get("app").(*RequestContext)
+	ctx := c.Get("ctx").(*RequestContext)
 
 	code := http.StatusInternalServerError
 	if he, ok := err.(*echo.HTTPError); ok {
