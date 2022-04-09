@@ -10,7 +10,7 @@ Catupiri framework core module
 // Start the new app:
 app := catu.NewApp()
 // Register your plugins
-app.RegisterPlugin("mm", mm.GetPlugin())
+app.RegisterPlugin("mm", mm.NewPlugin())
 // Start the bootstrap process, will load all resources, bind routes, middlewares ...
 app.Bootstrap()
 
