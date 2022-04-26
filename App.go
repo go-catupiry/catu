@@ -26,12 +26,39 @@ import (
 	"gorm.io/gorm"
 )
 
-type App struct {
+type App interface {
+	RegisterPlugin(p Pluginer)
+	GetPlugins() map[string]Pluginer
+
+	GetRouter() *echo.Echo
+	GetTemplates() *template.Template
+	Bootstrap() error
+	StartHTTPServer() error
+	SetRouterGroup(name, path string) *echo.Group
+	GetRouterGroup(name string) *echo.Group
+	SetAPIRouterGroup(name, path string) *echo.Group
+	GetAPIRouterGroup(name string) *echo.Group
+	SetResource(name string, httpController HTTPController, routerGroup *echo.Group) error
+	InitDatabase(name, engine string, isDefault bool) error
+	SetModel(name string, f interface{})
+	GetModel(name string) interface{}
+	SetTemplateFunction(name string, f interface{})
+	Can(permission string, userRoles []string) bool
+	LoadTemplates() error
+	Migrate() error
+
+	GetEvents() *event.Manager
+	GetConfiguration() configuration.ConfigurationInterface
+	GetDB() *gorm.DB
+	SetDB(db *gorm.DB) error
+}
+
+type AppStruct struct {
 	InitTime time.Time
 
 	Events *event.Manager
 
-	Configuration configuration.Configer
+	Configuration configuration.ConfigurationInterface
 	// Default database
 	DB *gorm.DB
 	// avaible databases
@@ -54,7 +81,7 @@ type App struct {
 	templateFunctions template.FuncMap
 }
 
-func (r *App) RegisterPlugin(p Pluginer) {
+func (r *AppStruct) RegisterPlugin(p Pluginer) {
 	if p.GetName() == "" {
 		panic("Plugin.RegisterPlugin Name should be returned from GetName method")
 	}
@@ -62,15 +89,35 @@ func (r *App) RegisterPlugin(p Pluginer) {
 	r.Plugins[p.GetName()] = p
 }
 
-func (r *App) GetRouter() *echo.Echo {
+func (r *AppStruct) GetPlugins() map[string]Pluginer {
+	return r.Plugins
+}
+
+func (r *AppStruct) GetRouter() *echo.Echo {
 	return r.router
 }
 
-func (r *App) GetTemplates() *template.Template {
+func (r *AppStruct) GetTemplates() *template.Template {
 	return r.templates
 }
 
-func (r *App) Bootstrap() error {
+func (r *AppStruct) GetEvents() *event.Manager {
+	return r.Events
+}
+
+func (r *AppStruct) GetConfiguration() configuration.ConfigurationInterface {
+	return r.Configuration
+}
+
+func (r *AppStruct) GetDB() *gorm.DB {
+	return r.DB
+}
+func (r *AppStruct) SetDB(db *gorm.DB) error {
+	r.DB = db
+	return nil
+}
+
+func (r *AppStruct) Bootstrap() error {
 	var err error
 
 	logrus.Debug("catu.App.Bootstrap running")
@@ -116,7 +163,7 @@ func (r *App) Bootstrap() error {
 	return nil
 }
 
-func (r *App) StartHTTPServer() error {
+func (r *AppStruct) StartHTTPServer() error {
 	port := r.Configuration.Get("PORT")
 	if port == "" {
 		port = "8080"
@@ -126,31 +173,31 @@ func (r *App) StartHTTPServer() error {
 	return http.ListenAndServe(":"+port, r.GetRouter())
 }
 
-func (r *App) SetRouterGroup(name, path string) *echo.Group {
+func (r *AppStruct) SetRouterGroup(name, path string) *echo.Group {
 	if r.routerGroups[name] == nil {
 		r.routerGroups[name] = r.router.Group(path)
 	}
 	return r.routerGroups[name]
 }
 
-func (r *App) GetRouterGroup(name string) *echo.Group {
+func (r *AppStruct) GetRouterGroup(name string) *echo.Group {
 	return r.routerGroups[name]
 }
 
-func (r *App) SetAPIRouterGroup(name, path string) *echo.Group {
+func (r *AppStruct) SetAPIRouterGroup(name, path string) *echo.Group {
 	if r.apiRouterGroups[name] == nil {
 		r.apiRouterGroups[name] = r.routerGroups["api"].Group(path)
 	}
 	return r.apiRouterGroups[name]
 }
 
-func (r *App) GetAPIRouterGroup(name string) *echo.Group {
+func (r *AppStruct) GetAPIRouterGroup(name string) *echo.Group {
 	return r.apiRouterGroups[name]
 }
 
 // Set Resource CRUD.
 // Now we only supports HTTP Resources / Ex Rest
-func (r *App) SetResource(name string, httpController HTTPController, routerGroup *echo.Group) error {
+func (r *AppStruct) SetResource(name string, httpController HTTPController, routerGroup *echo.Group) error {
 	routerGroup.GET("", httpController.Query)
 	routerGroup.GET("/count", httpController.Count)
 	routerGroup.POST("", httpController.Create)
@@ -168,7 +215,7 @@ func (r *App) SetResource(name string, httpController HTTPController, routerGrou
 	return nil
 }
 
-func (r *App) InitDatabase(name, engine string, isDefault bool) error {
+func (r *AppStruct) InitDatabase(name, engine string, isDefault bool) error {
 	var err error
 	var db *gorm.DB
 
@@ -226,19 +273,19 @@ func (r *App) InitDatabase(name, engine string, isDefault bool) error {
 	return nil
 }
 
-func (r *App) SetModel(name string, f interface{}) {
+func (r *AppStruct) SetModel(name string, f interface{}) {
 	r.Models[name] = f
 }
 
-func (r *App) GetModel(name string) interface{} {
+func (r *AppStruct) GetModel(name string) interface{} {
 	return r.Models[name]
 }
 
-func (r *App) SetTemplateFunction(name string, f interface{}) {
+func (r *AppStruct) SetTemplateFunction(name string, f interface{}) {
 	r.templateFunctions[name] = f
 }
 
-func (r *App) Can(permission string, userRoles []string) bool {
+func (r *AppStruct) Can(permission string, userRoles []string) bool {
 	// first check if user is administrator
 	for i := range userRoles {
 		if userRoles[i] == "administrator" {
@@ -256,7 +303,7 @@ func (r *App) Can(permission string, userRoles []string) bool {
 	return false
 }
 
-func (r *App) LoadTemplates() error {
+func (r *AppStruct) LoadTemplates() error {
 	rootDir := r.Configuration.GetF("TEMPLATE_FOLDER", "./templates")
 	disableTemplating := r.Configuration.GetBool("TEMPLATE_DISABLE")
 
@@ -284,7 +331,7 @@ func (r *App) LoadTemplates() error {
 }
 
 // Run migrations
-func (r *App) Migrate() error {
+func (r *AppStruct) Migrate() error {
 	err, _ := r.Events.Fire("migrate", event.M{"app": r})
 	if err != nil {
 		return errors.Wrap(err, "App.Migrate migrate error")
@@ -293,8 +340,8 @@ func (r *App) Migrate() error {
 	return nil
 }
 
-func newApp() *App {
-	var app App
+func newApp() App {
+	var app AppStruct
 
 	app.Events = event.NewManager("app")
 	app.RolesString, _ = acl.LoadRoles()
@@ -306,6 +353,15 @@ func newApp() *App {
 
 	app.Resources = make(map[string]*HTTPResource)
 	app.router = echo.New()
+
+	app.router.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			cc := &RequestContext{
+				EchoContext: c,
+			}
+			return next(cc)
+		}
+	})
 
 	app.router.Binder = &CustomBinder{}
 	app.router.HTTPErrorHandler = CustomHTTPErrorHandler

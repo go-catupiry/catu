@@ -1,8 +1,8 @@
 package catu
 
-var testAppInstance *App
+var testAppInstance App
 
-func GetTestAppInstance() *App {
+func GetTestAppInstance() App {
 	if testAppInstance != nil {
 		return testAppInstance
 	}

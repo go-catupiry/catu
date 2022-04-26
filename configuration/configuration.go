@@ -6,7 +6,7 @@ import (
 )
 
 // Default interface to be used on others modules
-type Configer interface {
+type ConfigurationInterface interface {
 	Init() error
 	Get(key string) string
 	GetBool(key string) bool
@@ -20,7 +20,7 @@ type Configer interface {
 }
 
 // Build and get a new Cfg object
-func NewCfg() Configer {
+func NewCfg() ConfigurationInterface {
 	c := Cfg{}
 
 	return c

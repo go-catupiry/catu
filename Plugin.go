@@ -9,16 +9,16 @@ type Plugin struct {
 	Name string
 }
 
-func (p *Plugin) Init(a *App) error {
+func (p *Plugin) Init(a App) error {
 	logrus.WithFields(logrus.Fields{
 		"PluginName": p.Name,
 	}).Debug("catu.Plugin.Init Running init")
 
-	a.Events.On("bindMiddlewares", event.ListenerFunc(func(e event.Event) error {
+	a.GetEvents().On("bindMiddlewares", event.ListenerFunc(func(e event.Event) error {
 		return p.BindMiddlewares(a)
 	}), event.High)
 
-	a.Events.On("setTemplateFunctions", event.ListenerFunc(func(e event.Event) error {
+	a.GetEvents().On("setTemplateFunctions", event.ListenerFunc(func(e event.Event) error {
 		return p.setTemplateFunctions(a)
 	}), event.Normal)
 
@@ -29,12 +29,12 @@ func (p *Plugin) GetName() string {
 	return p.Name
 }
 
-func (p *Plugin) BindMiddlewares(a *App) error {
+func (p *Plugin) BindMiddlewares(a App) error {
 	BindMiddlewares(a, p)
 	return nil
 }
 
-func (p *Plugin) setTemplateFunctions(app *App) error {
+func (p *Plugin) setTemplateFunctions(app App) error {
 	app.SetTemplateFunction("paginate", paginate)
 	app.SetTemplateFunction("contentDates", contentDates)
 	app.SetTemplateFunction("truncate", truncate)
@@ -45,6 +45,6 @@ func (p *Plugin) setTemplateFunctions(app *App) error {
 	return nil
 }
 
-func (p *Plugin) SetTemplateFuncMap(app *App) error {
+func (p *Plugin) SetTemplateFuncMap(app App) error {
 	return nil
 }

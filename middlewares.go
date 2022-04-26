@@ -10,44 +10,37 @@ import (
 )
 
 // BindMiddlewares - Bind middlewares in order
-func BindMiddlewares(app *App, p *Plugin) {
+func BindMiddlewares(app App, p *Plugin) {
 	logrus.Debug("catu.BindMiddlewares " + p.GetName())
 
-	goEnv := app.Configuration.Get("GO_ENV")
+	goEnv := app.GetConfiguration().Get("GO_ENV")
 
 	router := app.GetRouter()
 
-	router.Pre(initAppCtx())
+	router.Pre(preRequestMiddleware())
 	router.Pre(middleware.RemoveTrailingSlashWithConfig(middleware.TrailingSlashConfig{
 		RedirectCode: http.StatusMovedPermanently,
 	}))
 	router.Pre(extensionMiddleware())
 	router.Pre(contentNegotiationMiddleware())
 
-	// router.Use(mw.Recover())
 	router.Use(middleware.Gzip())
 	router.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowCredentials: app.Configuration.GetBoolF("CORS_ALLOW_CREDENTIALS", true),
-		MaxAge:           app.Configuration.GetIntF("CORS_MAX_AGE", 18000), // seccounds
+		AllowCredentials: app.GetConfiguration().GetBoolF("CORS_ALLOW_CREDENTIALS", true),
+		MaxAge:           app.GetConfiguration().GetIntF("CORS_MAX_AGE", 18000), // seccounds
 	}))
+	router.Use(initAppCtx())
 
 	if goEnv == "dev" {
 		router.Debug = true
 	}
-
 }
 
-func initAppCtx() echo.MiddlewareFunc {
+func preRequestMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			ctx := NewRequestRequestContext(c)
-			c.Set("ctx", &ctx)
-
-			logrus.WithFields(logrus.Fields{
-				"URL":    c.Request().URL,
-				"method": c.Request().Method,
-				"header": c.Request().Header,
-			}).Debug("init catu ctx init")
+			// default required values for init the request
+			c.Set("responseContentType", "text/html")
 
 			return next(c)
 		}
@@ -68,7 +61,6 @@ func extensionMiddleware() echo.MiddlewareFunc {
 				return next(c)
 			}
 
-			ctx := c.Get("ctx").(*RequestContext)
 			oldUrl := req.URL.Path
 
 			logrus.WithFields(logrus.Fields{
@@ -93,7 +85,7 @@ func extensionMiddleware() echo.MiddlewareFunc {
 				}
 
 				req.URL = url
-				ctx.ResponseContentType = "application/json"
+				c.Set("responseContentType", "application/json")
 			}
 
 			logrus.WithFields(logrus.Fields{
@@ -108,9 +100,15 @@ func extensionMiddleware() echo.MiddlewareFunc {
 func contentNegotiationMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			ctx := c.Get("ctx").(*RequestContext)
-			if ctx.ResponseContentType != "text/html" {
-				// already filled
+			responseTypeI := c.Get("responseContentType")
+			responseType := "text/html"
+
+			if responseTypeI != nil {
+				responseType = responseTypeI.(string)
+			}
+
+			if responseType != "text/html" {
+				// already set...
 				return next(c)
 			}
 
@@ -125,27 +123,46 @@ func contentNegotiationMiddleware() echo.MiddlewareFunc {
 			if contentTypeHeader != "" {
 				switch contentTypeHeader {
 				case "application/vnd.api+json":
-					ctx.ResponseContentType = "application/vnd.api+json"
+					responseType = "application/vnd.api+json"
 				}
 
-				if ctx.ResponseContentType != "text/html" {
+				if responseType != "text/html" {
 					logrus.WithFields(logrus.Fields{
 						"contentTypeHeader":   contentTypeHeader,
-						"ResponseContentType": ctx.ResponseContentType,
+						"ResponseContentType": responseType,
 					}).Debug("contentNegotiationMiddleware found in contentTypeHeader header")
 
+					c.Set("responseContentType", responseType)
 					return next(c)
 				}
 			}
 
 			switch acceptHeader {
 			case "application/json":
-				ctx.ResponseContentType = "application/json"
+				responseType = "application/json"
 			case "application/vnd.api+json":
-				ctx.ResponseContentType = "application/vnd.api+json"
+				responseType = "application/vnd.api+json"
 			}
 
+			c.Set("responseContentType", responseType)
 			return next(c)
+		}
+	}
+}
+
+// Middleare that update echo context to use custom methods
+func initAppCtx() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			ctx := NewRequestContext(&RequestContextOpts{EchoContext: c})
+
+			logrus.WithFields(logrus.Fields{
+				"URL":    ctx.Request().URL,
+				"method": ctx.Request().Method,
+				"header": ctx.Request().Header,
+			}).Debug("init catu ctx init")
+
+			return next(ctx)
 		}
 	}
 }

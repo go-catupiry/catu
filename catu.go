@@ -8,13 +8,13 @@ import (
 	"gorm.io/gorm"
 )
 
-var appInstance *App
+var appInstance App
 
 func init() {
 	initDotEnvConfigSupport()
 }
 
-func Init() *App {
+func Init() App {
 	appInstance = newApp()
 
 	InitSanitizer()
@@ -37,14 +37,14 @@ func initDotEnvConfigSupport() {
 	}
 }
 
-func GetApp() *App {
+func GetApp() App {
 	return appInstance
 }
 
-func GetConfiguration() configuration.Configer {
-	return appInstance.Configuration
+func GetConfiguration() configuration.ConfigurationInterface {
+	return appInstance.GetConfiguration()
 }
 
 func GetDefaultDatabaseConnection() *gorm.DB {
-	return appInstance.DB
+	return appInstance.GetDB()
 }
