@@ -36,8 +36,6 @@ type App interface {
 	StartHTTPServer() error
 	SetRouterGroup(name, path string) *echo.Group
 	GetRouterGroup(name string) *echo.Group
-	SetAPIRouterGroup(name, path string) *echo.Group
-	GetAPIRouterGroup(name string) *echo.Group
 	SetResource(name string, httpController HTTPController, routerGroup *echo.Group) error
 	InitDatabase(name, engine string, isDefault bool) error
 	SetModel(name string, f interface{})
@@ -182,17 +180,6 @@ func (r *AppStruct) SetRouterGroup(name, path string) *echo.Group {
 
 func (r *AppStruct) GetRouterGroup(name string) *echo.Group {
 	return r.routerGroups[name]
-}
-
-func (r *AppStruct) SetAPIRouterGroup(name, path string) *echo.Group {
-	if r.apiRouterGroups[name] == nil {
-		r.apiRouterGroups[name] = r.routerGroups["api"].Group(path)
-	}
-	return r.apiRouterGroups[name]
-}
-
-func (r *AppStruct) GetAPIRouterGroup(name string) *echo.Group {
-	return r.apiRouterGroups[name]
 }
 
 // Set Resource CRUD.
@@ -349,7 +336,6 @@ func newApp() App {
 	logger.Init()
 	app.Configuration = configuration.NewCfg()
 	app.routerGroups = make(map[string]*echo.Group)
-	app.apiRouterGroups = make(map[string]*echo.Group)
 
 	app.Resources = make(map[string]*HTTPResource)
 	app.router = echo.New()
