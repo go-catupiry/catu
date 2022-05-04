@@ -29,6 +29,8 @@ import (
 type App interface {
 	RegisterPlugin(p Pluginer)
 	GetPlugins() map[string]Pluginer
+	GetPlugin(name string) Pluginer
+	SetPlugin(name string, plugin Pluginer) error
 
 	GetRouter() *echo.Echo
 	GetTemplates() *template.Template
@@ -85,6 +87,15 @@ func (r *AppStruct) RegisterPlugin(p Pluginer) {
 	}
 
 	r.Plugins[p.GetName()] = p
+}
+
+func (r *AppStruct) GetPlugin(name string) Pluginer {
+	return r.Plugins[name]
+}
+
+func (r *AppStruct) SetPlugin(name string, plugin Pluginer) error {
+	r.Plugins[name] = plugin
+	return nil
 }
 
 func (r *AppStruct) GetPlugins() map[string]Pluginer {
