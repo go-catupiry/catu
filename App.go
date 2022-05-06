@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Masterminds/sprig"
@@ -14,6 +16,8 @@ import (
 	"github.com/go-catupiry/catu/helpers"
 	"github.com/go-catupiry/catu/http_client"
 	"github.com/go-catupiry/catu/logger"
+	"github.com/go-catupiry/catu/pagination"
+	"github.com/go-catupiry/query_parser_to_db"
 	"github.com/go-playground/validator/v10"
 	"github.com/gookit/event"
 	"github.com/labstack/echo/v4"
@@ -33,24 +37,31 @@ type App interface {
 	SetPlugin(name string, plugin Pluginer) error
 
 	GetRouter() *echo.Echo
-	GetTemplates() *template.Template
-	Bootstrap() error
-	StartHTTPServer() error
 	SetRouterGroup(name, path string) *echo.Group
 	GetRouterGroup(name string) *echo.Group
 	SetResource(name string, httpController HTTPController, routerGroup *echo.Group) error
+	StartHTTPServer() error
+	NewRequestContext(opts *RequestContextOpts) *RequestContext
+
+	GetTemplates() *template.Template
+	LoadTemplates() error
+	SetTemplateFunction(name string, f interface{})
+
 	InitDatabase(name, engine string, isDefault bool) error
 	SetModel(name string, f interface{})
 	GetModel(name string) interface{}
-	SetTemplateFunction(name string, f interface{})
+
 	Can(permission string, userRoles []string) bool
-	LoadTemplates() error
-	Migrate() error
 
 	GetEvents() *event.Manager
+
 	GetConfiguration() configuration.ConfigurationInterface
+
 	GetDB() *gorm.DB
 	SetDB(db *gorm.DB) error
+	Migrate() error
+
+	Bootstrap() error
 }
 
 type AppStruct struct {
@@ -104,6 +115,79 @@ func (r *AppStruct) GetPlugins() map[string]Pluginer {
 
 func (r *AppStruct) GetRouter() *echo.Echo {
 	return r.router
+}
+
+func (app *AppStruct) NewRequestContext(opts *RequestContextOpts) *RequestContext {
+	cfg := app.GetConfiguration()
+	port := cfg.GetF("PORT", "8080")
+	protocol := cfg.GetF("PROTOCOL", "http")
+	domain := cfg.GetF("DOMAIN", "localhost")
+
+	ctx := RequestContext{
+		EchoContext: opts.EchoContext,
+		Protocol:    protocol,
+		Domain:      domain,
+		AppOrigin:   cfg.GetF("APP_ORIGIN", protocol+"://"+domain+":"+port),
+		// Title:               "",
+		Layout: "site/layouts/default",
+		ENV:    cfg.GetF("GO_ENV", "development"),
+		Query:  query_parser_to_db.NewQuery(50),
+		Pager:  pagination.NewPager(),
+	}
+
+	// Is a context used on CLIs, not in HTTP request / echo then skip it
+	if opts.EchoContext == nil || ctx.Request().URL == nil {
+		return &ctx
+	}
+
+	ctx.Pager.CurrentUrl = ctx.Request().URL.Path
+	ctx.Pager.Limit, _ = strconv.ParseInt(cfg.GetF("PAGER_LIMIT", "20"), 10, 64)
+
+	ctx.MetaTags.Title = cfg.Get("SITE_NAME")
+	ctx.MetaTags.Description = cfg.Get("SITE_DESCRIPTION")
+	ctx.MetaTags.ImageURL = cfg.Get("SITE_IMAGE_URL")
+	ctx.MetaTags.SiteName = cfg.Get("SITE_NAME")
+
+	if opts.EchoContext.Request().Method != "GET" {
+		return &ctx
+	}
+
+	limitMax, _ := strconv.ParseInt(app.GetConfiguration().GetF("PAGER_LIMIT_MAX", "50"), 10, 64)
+
+	rawParams := opts.EchoContext.QueryParams()
+
+	filteredParamArray := []string{}
+
+	for key, param := range rawParams {
+		// get limit with max value for security:
+		if key == "limit" && len(param) == 1 {
+			queryLimit, err := strconv.ParseInt(param[0], 10, 64)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"key":   key,
+					"param": param,
+				}).Error("NewRequestContext invalid query param limit")
+				continue
+			}
+			if queryLimit > 0 && queryLimit < limitMax {
+				ctx.Pager.Limit = queryLimit
+			}
+		}
+
+		if key == "page" && len(param) == 1 {
+			page, _ := strconv.ParseInt(param[0], 10, 64)
+			ctx.Pager.Page = page
+			continue
+		}
+
+		ctx.Query.AddQueryParamFromRaw(key, param)
+	}
+
+	if len(filteredParamArray) > 0 {
+		strings.Join(filteredParamArray[:], ",")
+	}
+
+	return &ctx
 }
 
 func (r *AppStruct) GetTemplates() *template.Template {
