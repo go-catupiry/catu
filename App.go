@@ -2,6 +2,7 @@ package catu
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -62,6 +63,7 @@ type App interface {
 	Migrate() error
 
 	Bootstrap() error
+	Close() error
 }
 
 type AppStruct struct {
@@ -421,6 +423,18 @@ func (r *AppStruct) Migrate() error {
 	err, _ := r.Events.Fire("migrate", event.M{"app": r})
 	if err != nil {
 		return errors.Wrap(err, "App.Migrate migrate error")
+	}
+
+	return nil
+}
+
+// Method for close and end all app operations, use that before close the app execution
+func (r *AppStruct) Close() error {
+	err, _ := r.Events.Fire("close", event.M{"app": r})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"error": fmt.Sprintf("%+v\n", err),
+		}).Debug("catu.App.Close error")
 	}
 
 	return nil
