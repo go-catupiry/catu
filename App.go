@@ -137,12 +137,12 @@ func (app *AppStruct) NewRequestContext(opts *RequestContextOpts) *RequestContex
 		Pager:  pagination.NewPager(),
 	}
 
-	if opts.EchoContext == nil {
-		opts.EchoContext = echo.New().NewContext(&http.Request{}, &helpers.FakeResponseWriter{})
+	if ctx.EchoContext == nil {
+		ctx.EchoContext = echo.New().NewContext(&http.Request{}, &helpers.FakeResponseWriter{})
 	}
 
 	// Is a context used on CLIs, not in HTTP request / echo then skip it
-	if opts.EchoContext == nil || ctx.Request().URL == nil {
+	if ctx.Request() == nil || ctx.Request().URL == nil {
 		return &ctx
 	}
 
