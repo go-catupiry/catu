@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -47,6 +48,7 @@ type App interface {
 	GetTemplates() *template.Template
 	LoadTemplates() error
 	SetTemplateFunction(name string, f interface{})
+	RenderTemplate(wr io.Writer, name string, data interface{}) error
 
 	InitDatabase(name, engine string, isDefault bool) error
 	SetModel(name string, f interface{})
@@ -371,6 +373,10 @@ func (r *AppStruct) GetModel(name string) interface{} {
 
 func (r *AppStruct) SetTemplateFunction(name string, f interface{}) {
 	r.templateFunctions[name] = f
+}
+
+func (app *AppStruct) RenderTemplate(wr io.Writer, name string, data interface{}) error {
+	return app.GetTemplates().ExecuteTemplate(wr, name, data)
 }
 
 func (r *AppStruct) Can(permission string, userRoles []string) bool {

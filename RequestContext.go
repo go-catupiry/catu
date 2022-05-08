@@ -458,7 +458,6 @@ func (r *RequestContext) RenderPagination(name string) string {
 // Render one template, alias to app.templates.ExecuteTemplate()
 func (r *RequestContext) RenderTemplate(wr io.Writer, name string, data interface{}) error {
 	app := GetApp()
-
 	return app.GetTemplates().ExecuteTemplate(wr, name, data)
 }
 
