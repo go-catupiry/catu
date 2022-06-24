@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -44,7 +45,14 @@ type App interface {
 	SetResource(name string, httpController HTTPController, routerGroup *echo.Group) error
 	StartHTTPServer() error
 	NewRequestContext(opts *RequestContextOpts) *RequestContext
-
+	// Get default app theme
+	GetTheme() string
+	// Set default app theme
+	SetTheme(theme string) error
+	// Get default app layout
+	GetLayout() string
+	// Set default app layout
+	SetLayout(layout string) error
 	GetTemplates() *template.Template
 	LoadTemplates() error
 	SetTemplateFunction(name string, f interface{})
@@ -91,7 +99,10 @@ type AppStruct struct {
 
 	RolesString string
 	RolesList   map[string]acl.Role
-
+	// default theme for HTML responses
+	Theme string
+	// default layout for HTML responses
+	Layout            string
 	templates         *template.Template
 	templateFunctions template.FuncMap
 }
@@ -128,12 +139,14 @@ func (app *AppStruct) NewRequestContext(opts *RequestContextOpts) *RequestContex
 	domain := cfg.GetF("DOMAIN", "localhost")
 
 	ctx := RequestContext{
+		App:         app,
 		EchoContext: opts.EchoContext,
 		Protocol:    protocol,
 		Domain:      domain,
 		AppOrigin:   cfg.GetF("APP_ORIGIN", protocol+"://"+domain+":"+port),
 		// Title:               "",
-		Layout: "site/layouts/default",
+		Theme:  cfg.GetF("THEME", "site"),
+		Layout: "layouts/default",
 		ENV:    cfg.GetF("GO_ENV", "development"),
 		Query:  query_parser_to_db.NewQuery(50),
 		Pager:  pagination.NewPager(),
@@ -196,6 +209,28 @@ func (app *AppStruct) NewRequestContext(opts *RequestContextOpts) *RequestContex
 	}
 
 	return &ctx
+}
+
+// Get default app theme
+func (r *AppStruct) GetTheme() string {
+	return r.Theme
+}
+
+// Set default app theme
+func (r *AppStruct) SetTheme(theme string) error {
+	r.Theme = theme
+	return nil
+}
+
+// Get default app layout
+func (r *AppStruct) GetLayout() string {
+	return r.Layout
+}
+
+// Set default app Layout
+func (r *AppStruct) SetLayout(layout string) error {
+	r.Layout = layout
+	return nil
 }
 
 func (r *AppStruct) GetTemplates() *template.Template {
@@ -375,8 +410,9 @@ func (r *AppStruct) SetTemplateFunction(name string, f interface{}) {
 	r.templateFunctions[name] = f
 }
 
+// RenderTemplate - Render template with default app theme
 func (app *AppStruct) RenderTemplate(wr io.Writer, name string, data interface{}) error {
-	return app.GetTemplates().ExecuteTemplate(wr, name, data)
+	return app.GetTemplates().ExecuteTemplate(wr, path.Join(app.Theme, name), data)
 }
 
 func (r *AppStruct) Can(permission string, userRoles []string) bool {
@@ -398,7 +434,7 @@ func (r *AppStruct) Can(permission string, userRoles []string) bool {
 }
 
 func (r *AppStruct) LoadTemplates() error {
-	rootDir := r.Configuration.GetF("TEMPLATE_FOLDER", "./templates")
+	rootDir := r.Configuration.GetF("TEMPLATE_FOLDER", "./themes")
 	disableTemplating := r.Configuration.GetBool("TEMPLATE_DISABLE")
 
 	if disableTemplating {
@@ -447,17 +483,20 @@ func (r *AppStruct) Close() error {
 }
 
 func newApp() App {
-	var app AppStruct
-
-	app.Events = event.NewManager("app")
-	app.RolesString, _ = acl.LoadRoles()
-
+	cfg := configuration.NewCfg()
 	logger.Init()
-	app.Configuration = configuration.NewCfg()
-	app.routerGroups = make(map[string]*echo.Group)
 
-	app.Resources = make(map[string]*HTTPResource)
-	app.router = echo.New()
+	app := AppStruct{
+		Theme:         cfg.GetF("THEME", "site"),
+		Layout:        "layouts/default",
+		Configuration: cfg,
+		Events:        event.NewManager("app"),
+		router:        echo.New(),
+		routerGroups:  make(map[string]*echo.Group),
+		Resources:     make(map[string]*HTTPResource),
+	}
+
+	app.RolesString, _ = acl.LoadRoles()
 
 	app.router.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {

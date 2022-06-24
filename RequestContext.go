@@ -1,11 +1,14 @@
 package catu
 
 import (
+	"bytes"
+	"fmt"
 	"html/template"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"path"
 	"strconv"
 	"strings"
 
@@ -29,12 +32,14 @@ func NewRequestContext(opts *RequestContextOpts) *RequestContext {
 	domain := cfg.GetF("DOMAIN", "localhost")
 
 	ctx := RequestContext{
+		App:         app,
 		EchoContext: opts.EchoContext,
 		Protocol:    protocol,
 		Domain:      domain,
 		AppOrigin:   cfg.GetF("APP_ORIGIN", protocol+"://"+domain+":"+port),
 		// Title:               "",
-		Layout: "site/layouts/default",
+		Theme:  app.GetTheme(),
+		Layout: app.GetLayout(),
 		ENV:    cfg.GetF("GO_ENV", "development"),
 		Query:  query_parser_to_db.NewQuery(50),
 		Pager:  pagination.NewPager(),
@@ -97,6 +102,7 @@ func NewRequestContext(opts *RequestContextOpts) *RequestContext {
 
 type RequestContext struct {
 	EchoContext echo.Context
+	App         App
 
 	PathBeforeAlias string
 	Protocol        string
@@ -112,6 +118,7 @@ type RequestContext struct {
 	Session SessionData
 
 	Widgets   map[string]map[string]string
+	Theme     string
 	Layout    string
 	BodyClass []string
 	Content   template.HTML
@@ -455,10 +462,24 @@ func (r *RequestContext) RenderPagination(name string) string {
 	return html
 }
 
-// Render one template, alias to app.templates.ExecuteTemplate()
+// Render one template, with support for themes
 func (r *RequestContext) RenderTemplate(wr io.Writer, name string, data interface{}) error {
-	app := GetApp()
-	return app.GetTemplates().ExecuteTemplate(wr, name, data)
+	return r.App.GetTemplates().ExecuteTemplate(wr, path.Join(r.Theme, name), data)
+}
+
+// Partial - Include and render one template inside other
+func (r *RequestContext) Partial(name string, data interface{}) template.HTML {
+	var htmlBuffer bytes.Buffer
+	err := r.RenderTemplate(&htmlBuffer, name, data)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"partialName": name,
+			"error":       fmt.Sprintf("%+v\n", err),
+		}).Error("catu.Partial error on render partial template")
+		return template.HTML("")
+	}
+
+	return template.HTML(htmlBuffer.String())
 }
 
 // Add a body class string checking if is unique
@@ -544,9 +565,8 @@ func (r *RequestContext) SetAuthenticatedUserAndFillRoles(user UserInterface) {
 }
 
 func (r *RequestContext) Can(permission string) bool {
-	app := GetApp()
 	roles := r.GetAuthenticatedRoles()
-	return app.Can(permission, *roles)
+	return r.App.Can(permission, *roles)
 }
 
 func GetQueryIntFromReq(param string, c echo.Context) int {
@@ -586,7 +606,7 @@ func GetQueryInt64FromReq(param string, c echo.Context) int64 {
 }
 
 func (r *RequestContext) RenderMetaTags() template.HTML {
-	app := GetApp()
+	app := r.App
 	html := ""
 
 	pageUrl := r.AppOrigin + r.PathBeforeAlias

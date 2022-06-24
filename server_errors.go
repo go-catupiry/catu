@@ -97,7 +97,7 @@ func forbiddenErrorHandler(err error, c echo.Context) error {
 	case "text/html":
 		ctx.Title = "Acesso restrito"
 
-		if err := c.Render(http.StatusForbidden, "site/403", &TemplateCTX{
+		if err := c.Render(http.StatusForbidden, "403", &TemplateCTX{
 			Ctx: ctx,
 		}); err != nil {
 			c.Logger().Error(err)
@@ -124,7 +124,7 @@ func unAuthorizedErrorHandler(err error, ctx *RequestContext) error {
 	case "text/html":
 		ctx.Title = "Forbidden"
 
-		if err := ctx.Render(http.StatusUnauthorized, "site/401", &TemplateCTX{
+		if err := ctx.Render(http.StatusUnauthorized, "401", &TemplateCTX{
 			Ctx: ctx,
 		}); err != nil {
 			ctx.Logger().Error(err)
@@ -148,7 +148,7 @@ func notFoundErrorHandler(err error, ctx *RequestContext) error {
 	case "text/html":
 		ctx.Title = "Não encontrado"
 
-		if err := ctx.Render(http.StatusNotFound, "site/404", &TemplateCTX{
+		if err := ctx.Render(http.StatusNotFound, "404", &TemplateCTX{
 			Ctx: ctx,
 		}); err != nil {
 			ctx.Logger().Error(err)
@@ -183,7 +183,7 @@ func validationError(ve validator.ValidationErrors, err error, ctx *RequestConte
 	case "text/html":
 		ctx.Title = "Bad request"
 
-		if err := ctx.Render(http.StatusInternalServerError, "site/400", &TemplateCTX{
+		if err := ctx.Render(http.StatusInternalServerError, "400", &TemplateCTX{
 			Ctx: ctx,
 		}); err != nil {
 			ctx.Logger().Error(err)
@@ -214,7 +214,7 @@ func internalServerErrorHandler(err error, ctx *RequestContext) error {
 	case "text/html":
 		ctx.Title = "Internal server error"
 
-		if err := ctx.Render(http.StatusInternalServerError, "site/500", &TemplateCTX{
+		if err := ctx.Render(http.StatusInternalServerError, "500", &TemplateCTX{
 			Ctx: ctx,
 		}); err != nil {
 			ctx.Logger().Error(err)

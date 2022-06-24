@@ -14,6 +14,7 @@ import (
 
 	"github.com/go-catupiry/catu/pagination"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -53,25 +54,27 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 			"len templates": len(t.templates.Templates()),
 		}).Debug("Render")
 
+		ctx := htmlContext.Ctx.(*RequestContext)
+
 		var contentBuffer bytes.Buffer
-		err := t.templates.ExecuteTemplate(&contentBuffer, name, htmlContext)
+		err := ctx.RenderTemplate(&contentBuffer, name, htmlContext)
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
-				"error": err,
+				"error": fmt.Sprintf("%+v\n", errors.Wrap(err, "catu.theme.Render error on render template")),
 				"name":  name,
 			}).Error("catu.theme.Render error on execute template")
 			return err
 		}
 
-		ctx := htmlContext.Ctx.(*RequestContext)
 		ctx.Content = template.HTML(contentBuffer.String())
 
 		var layoutBuffer bytes.Buffer
-		err = t.templates.ExecuteTemplate(&layoutBuffer, ctx.Layout, htmlContext)
+		err = ctx.RenderTemplate(&layoutBuffer, ctx.Layout, htmlContext)
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
 				"error":  err,
 				"name":   name,
+				"theme":  ctx.Theme,
 				"layout": ctx.Layout,
 			}).Error("catu.theme.Render error on execute layout template")
 			return err
@@ -79,7 +82,7 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 
 		ctx.Content = template.HTML(layoutBuffer.String())
 
-		return t.templates.ExecuteTemplate(w, "site/html", htmlContext)
+		return ctx.RenderTemplate(w, "html", htmlContext)
 	}
 
 	return nil
@@ -117,10 +120,8 @@ func findAndParseTemplates(rootDir string, funcMap template.FuncMap) (*template.
 	return root, err
 }
 
-func renderPager(r *pagination.Pager, queryString string) template.HTML {
+func renderPager(ctx *RequestContext, r *pagination.Pager, queryString string) template.HTML {
 	var htmlBuffer bytes.Buffer
-	app := GetApp()
-	templates := app.GetTemplates()
 
 	logrus.WithFields(logrus.Fields{
 		"count": r.Count,
@@ -213,13 +214,14 @@ func renderPager(r *pagination.Pager, queryString string) template.HTML {
 	// 	"endInPage":   endInPage,
 	// }).Debug("Calculing end")
 
-	err := templates.ExecuteTemplate(&htmlBuffer, "site/components/paginate", TemplateCTX{
+	err := ctx.RenderTemplate(&htmlBuffer, "components/paginate", TemplateCTX{
 		Ctx: &r,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"pagger": &r,
 			"error":  err,
+			"theme":  ctx.Theme,
 		}).Error("theme.paginate Error on render template")
 	}
 

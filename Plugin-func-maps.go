@@ -13,8 +13,8 @@ func noEscapeHTML(str string) template.HTML {
 	return template.HTML(str)
 }
 
-func paginate(pager *pagination.Pager, queryString string) template.HTML {
-	return renderPager(pager, queryString)
+func paginate(ctx *RequestContext, pager *pagination.Pager, queryString string) template.HTML {
+	return renderPager(ctx, pager, queryString)
 }
 
 type ContentDates interface {
