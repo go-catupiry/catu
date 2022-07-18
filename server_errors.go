@@ -11,6 +11,56 @@ import (
 	"gorm.io/gorm"
 )
 
+type HTTPErrorInterface interface {
+	Error() string
+	GetCode() int
+	SetCode(code int) error
+	GetMessage() interface{}
+	SetMessage(message interface{}) error
+}
+
+// HTTPError implements HTTP Error interface, default error object
+type HTTPError struct {
+	Code     int         `json:"code"`
+	Message  interface{} `json:"message"`
+	Internal error       `json:"-"` // Stores the error returned by an external dependency
+}
+
+// Error makes it compatible with `error` interface.
+func (e *HTTPError) Error() string {
+	if e.Internal == nil {
+		return fmt.Sprintf("code=%d, message=%v", e.Code, e.Message)
+	}
+	return fmt.Sprintf("code=%d, message=%v, internal=%v", e.Code, e.Message, e.Internal)
+}
+
+func (e *HTTPError) GetCode() int {
+	return e.Code
+}
+
+func (e *HTTPError) SetCode(code int) error {
+	e.Code = code
+	return nil
+}
+
+func (e *HTTPError) GetMessage() interface{} {
+	return e.Message
+}
+
+func (e *HTTPError) SetMessage(message interface{}) error {
+	e.Message = message
+	return nil
+}
+
+func (e *HTTPError) GetInternal() error {
+	return e.Internal
+}
+
+func (e *HTTPError) SetInternal(internal error) error {
+	e.Internal = internal
+	return nil
+}
+
 type ValidationResponse struct {
 	Errors []*ValidationFieldError `json:"errors"`
 }
@@ -20,11 +70,6 @@ type ValidationFieldError struct {
 	Tag     string `json:"tag"`
 	Value   string `json:"value"`
 	Message string `json:"message"`
-}
-
-type HTTPError struct {
-	Code    int         `json:"code"`
-	Message interface{} `json:"message"`
 }
 
 func CustomHTTPErrorHandler(err error, c echo.Context) {
@@ -42,10 +87,10 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 	}
 
 	code := 0
-	if he, ok := err.(*echo.HTTPError); ok {
-		code = he.Code
+	if he, ok := err.(HTTPErrorInterface); ok {
+		code = he.GetCode()
 		if ctx.GetResponseContentType() == "application/json" {
-			c.JSON(he.Code, &HTTPError{Code: he.Code, Message: he.Message})
+			c.JSON(code, &HTTPError{Code: code, Message: he.GetMessage()})
 			return
 		}
 	}
@@ -197,7 +242,7 @@ func validationError(ve validator.ValidationErrors, err error, ctx *RequestConte
 
 func internalServerErrorHandler(err error, ctx *RequestContext) error {
 	code := http.StatusInternalServerError
-	if he, ok := err.(*echo.HTTPError); ok {
+	if he, ok := err.(*HTTPError); ok {
 		code = he.Code
 	}
 
@@ -222,7 +267,7 @@ func internalServerErrorHandler(err error, ctx *RequestContext) error {
 
 		return nil
 	default:
-		if he, ok := err.(*echo.HTTPError); ok {
+		if he, ok := err.(*HTTPError); ok {
 			return ctx.JSON(he.Code, &HTTPError{Code: he.Code, Message: he.Message})
 		}
 
