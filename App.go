@@ -94,8 +94,7 @@ type AppStruct struct {
 	router    *echo.Echo
 	Resources map[string]*HTTPResource
 
-	routerGroups    map[string]*echo.Group
-	apiRouterGroups map[string]*echo.Group
+	routerGroups map[string]*echo.Group
 
 	RolesString string
 	RolesList   map[string]acl.Role
@@ -513,6 +512,8 @@ func newApp() App {
 
 	app.router.GET("/health", HealthCheckHandler)
 	app.Plugins = make(map[string]Pluginer)
+
+	app.Models = make(map[string]interface{})
 
 	app.templates = &template.Template{}
 
