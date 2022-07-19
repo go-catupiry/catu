@@ -1,6 +1,8 @@
 package helpers
 
-import "strings"
+import (
+	"strings"
+)
 
 func ParseUrlQueryOrder(order string) (string, bool, bool) {
 	if order == "" {
