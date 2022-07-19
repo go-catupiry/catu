@@ -90,7 +90,15 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 	if he, ok := err.(HTTPErrorInterface); ok {
 		code = he.GetCode()
 		if ctx.GetResponseContentType() == "application/json" {
-			c.JSON(code, &HTTPError{Code: code, Message: he.GetMessage()})
+			c.JSON(code, he)
+			return
+		}
+	}
+
+	if he, ok := err.(*echo.HTTPError); ok {
+		code = he.Code
+		if ctx.GetResponseContentType() == "application/json" {
+			c.JSON(code, he)
 			return
 		}
 	}
