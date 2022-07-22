@@ -25,3 +25,17 @@ func TestExtractYearFromText(t *testing.T) {
 		assert.EqualValues(t, result, "")
 	})
 }
+
+func TestFormatCurrencyDate(t *testing.T) {
+	// t.Run("Should return a currency date", func(t *testing.T) {
+	// 	layout := "02-01-2006"
+	// 	FormatCurrencyDate(layout)
+	// })
+
+	t.Run("Should return error with invalid format", func(t *testing.T) {
+		layout := ""
+		result := FormatCurrencyDate(layout)
+		assert.Equal(t, "", result)
+	})
+
+}
