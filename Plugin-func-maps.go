@@ -44,7 +44,3 @@ func formatCurrency(value decimal.Decimal) string {
 func formatDecimalWithDots(value decimal.Decimal) string {
 	return helpers.FormatDecimalWithDots(value)
 }
-
-func currentDate(format string) string {
-	return helpers.FormatCurrencyDate(format)
-}
