@@ -26,3 +26,14 @@ func ExtractYearFromText(text string) string {
 
 	return ""
 }
+
+func FormatCurrencyDate(format string) string {
+	date := time.Now()
+	timeZone := configuration.GetEnv("SITE_TIMEZONE", "")
+	loc, err := time.LoadLocation(timeZone)
+	if err != nil {
+		return ""
+	}
+
+	return date.In(loc).Format(format)
+}
