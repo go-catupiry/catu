@@ -155,13 +155,6 @@ func initAppCtx() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			ctx := NewRequestContext(&RequestContextOpts{EchoContext: c})
-
-			logrus.WithFields(logrus.Fields{
-				"URL":    ctx.Request().URL,
-				"method": ctx.Request().Method,
-				"header": ctx.Request().Header,
-			}).Debug("init catu ctx init")
-
 			return next(ctx)
 		}
 	}
