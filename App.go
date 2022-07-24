@@ -382,7 +382,9 @@ func (r *AppStruct) InitDatabase(name, engine string, isDefault bool) error {
 	var gormCFG gorm.Option
 
 	if r.Options.GormOptions != nil {
-		gormCFG = r.Options.GormOptions
+		o := r.Options.GormOptions.(*gorm.Config)
+		o.Logger = logg
+		gormCFG = o
 	} else {
 		gormCFG = &gorm.Config{
 			Logger: logg,
