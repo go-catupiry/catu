@@ -76,8 +76,15 @@ type App interface {
 	Close() error
 }
 
+type AppOptions struct {
+	// Gorm configurations / options
+	GormOptions gorm.Option
+}
+
 type AppStruct struct {
 	InitTime time.Time
+
+	Options *AppOptions
 
 	Events *event.Manager
 
@@ -372,15 +379,21 @@ func (r *AppStruct) InitDatabase(name, engine string, isDefault bool) error {
 		logg = dbLogger.LogMode(gorm_logger.Info)
 	}
 
+	var gormCFG gorm.Option
+
+	if r.Options.GormOptions != nil {
+		gormCFG = r.Options.GormOptions
+	} else {
+		gormCFG = &gorm.Config{
+			Logger: logg,
+		}
+	}
+
 	switch engine {
 	case "mysql":
-		db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
-			Logger: logg,
-		})
+		db, err = gorm.Open(mysql.Open(dsn), gormCFG)
 	case "sqlite":
-		db, err = gorm.Open(sqlite.Open(dbURI), &gorm.Config{
-			Logger: logg,
-		})
+		db, err = gorm.Open(sqlite.Open(dbURI), gormCFG)
 
 	default:
 		return errors.New("catu.App.InitDatabase invalid database engine. Options available: mysql or sqlite")
@@ -481,11 +494,12 @@ func (r *AppStruct) Close() error {
 	return nil
 }
 
-func newApp() App {
+func newApp(options *AppOptions) App {
 	cfg := configuration.NewCfg()
 	logger.Init()
 
 	app := AppStruct{
+		Options:       options,
 		Theme:         cfg.GetF("THEME", "site"),
 		Layout:        "layouts/default",
 		Configuration: cfg,

@@ -7,7 +7,7 @@ func GetTestAppInstance() App {
 		return testAppInstance
 	}
 
-	app := Init()
+	app := Init(&AppOptions{})
 
 	err := app.Bootstrap()
 	if err != nil {

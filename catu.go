@@ -14,8 +14,8 @@ func init() {
 	initDotEnvConfigSupport()
 }
 
-func Init() App {
-	appInstance = newApp()
+func Init(options *AppOptions) App {
+	appInstance = newApp(options)
 
 	InitSanitizer()
 
