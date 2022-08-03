@@ -135,15 +135,15 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 }
 
 func forbiddenErrorHandler(err error, c echo.Context) error {
-	ctx := c.Get("ctx").(*RequestContext)
+	ctx := c.(*RequestContext)
 
 	logrus.WithFields(logrus.Fields{
-		"err":               fmt.Sprintf("%+v\n", err),
-		"code":              "403",
-		"path":              c.Path(),
-		"method":            c.Request().Method,
-		"AuthenticatedUser": ctx.AuthenticatedUser,
-		"roles":             ctx.GetAuthenticatedRoles(),
+		"err":                 fmt.Sprintf("%+v\n", err),
+		"code":                "403",
+		"path":                c.Path(),
+		"method":              c.Request().Method,
+		"AuthenticatedUserID": ctx.AuthenticatedUser.GetID(),
+		"roles":               ctx.GetAuthenticatedRoles(),
 	}).Debug("catu.forbiddenErrorHandler running")
 
 	switch ctx.GetResponseContentType() {
