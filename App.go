@@ -63,6 +63,11 @@ type App interface {
 	GetModel(name string) interface{}
 
 	Can(permission string, userRoles []string) bool
+	SetRole(name string, role acl.Role) error
+	GetRoles() map[string]acl.Role
+	GetRole(name string) *acl.Role
+	SetRolePermission(name string, permission string, hasAccess bool) error
+	GetRolePermission(name string, permission string) bool
 
 	GetEvents() *event.Manager
 
@@ -443,6 +448,43 @@ func (r *AppStruct) Can(permission string, userRoles []string) bool {
 			return true
 		}
 	}
+
+	return false
+}
+
+func (r *AppStruct) SetRole(name string, role acl.Role) error {
+	r.RolesList[name] = role
+	return nil
+}
+
+func (r *AppStruct) GetRoles() map[string]acl.Role {
+	return r.RolesList
+}
+
+func (r *AppStruct) GetRole(name string) *acl.Role {
+	if v, ok := r.RolesList[name]; ok {
+		return &v
+	}
+
+	return nil
+}
+
+func (r *AppStruct) SetRolePermission(name string, permission string, hasAccess bool) error {
+	role := r.GetRole(name)
+	if role == nil {
+		return nil
+	}
+
+	if hasAccess {
+		role.AddPermission(permission)
+	} else {
+		role.RemovePermission(permission)
+	}
+
+	return nil
+}
+
+func (r *AppStruct) GetRolePermission(name string, permission string) bool {
 
 	return false
 }
