@@ -608,8 +608,15 @@ func GetQueryInt64FromReq(param string, c echo.Context) int64 {
 func (r *RequestContext) RenderMetaTags() template.HTML {
 	app := r.App
 	html := ""
+	pagePath := ""
 
-	pageUrl := r.AppOrigin + r.PathBeforeAlias
+	if r.PathBeforeAlias != "" {
+		pagePath = r.PathBeforeAlias
+	} else {
+		pagePath = r.EchoContext.Request().URL.Path
+	}
+
+	pageUrl := r.AppOrigin + pagePath
 
 	if pageUrl != "" {
 		html += `<meta property="og:url" content="` + pageUrl + `" />`
