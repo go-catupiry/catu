@@ -13,8 +13,8 @@ type HTMLMetaTags struct {
 	ImageWidth  string
 	Author      string
 	Keywords    string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	PublishedAt time.Time
+	CreatedAt   *time.Time
+	UpdatedAt   *time.Time
+	PublishedAt *time.Time
 	TwitterSite string
 }
