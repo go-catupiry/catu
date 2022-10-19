@@ -1,5 +1,7 @@
 package catu
 
+import "time"
+
 type HTMLMetaTags struct {
 	Title       string
 	Description string
@@ -11,8 +13,8 @@ type HTMLMetaTags struct {
 	ImageWidth  string
 	Author      string
 	Keywords    string
-	CreatedAt   string
-	UpdatedAt   string
-	PublishedAt string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	PublishedAt time.Time
 	TwitterSite string
 }
