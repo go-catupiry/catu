@@ -610,10 +610,11 @@ func (r *RequestContext) RenderMetaTags() template.HTML {
 	html := ""
 	pagePath := ""
 
-	if r.PathBeforeAlias != "" {
-		pagePath = r.PathBeforeAlias
-	} else {
+	// Use the current url as canonical, if the url is a permanent with alias like /content/:id the backed will repply with redirect to the alias
+	if r.MetaTags.Canonical == "" {
 		pagePath = r.EchoContext.Request().URL.Path
+	} else {
+		pagePath = r.MetaTags.Canonical
 	}
 
 	pageUrl := r.AppOrigin + pagePath
