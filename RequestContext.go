@@ -104,11 +104,10 @@ type RequestContext struct {
 	EchoContext echo.Context
 	App         App
 
-	PathBeforeAlias string
-	Protocol        string
-	Domain          string
-	AppOrigin       string
-	Title           string
+	Protocol  string
+	Domain    string
+	AppOrigin string
+	Title     string
 
 	IsAuthenticated   bool
 	AuthenticatedUser UserInterface
@@ -612,7 +611,12 @@ func (r *RequestContext) RenderMetaTags() template.HTML {
 
 	// Use the current url as canonical, if the url is a permanent with alias like /content/:id the backed will repply with redirect to the alias
 	if r.MetaTags.Canonical == "" {
-		pagePath = r.EchoContext.Request().URL.Path
+		pathBeforeAlias := r.GetString("pathBeforeAlias")
+		if pathBeforeAlias != "" {
+			pagePath = pathBeforeAlias
+		} else {
+			pagePath = r.EchoContext.Request().URL.Path
+		}
 	} else {
 		pagePath = r.MetaTags.Canonical
 	}
