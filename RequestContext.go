@@ -53,11 +53,6 @@ func NewRequestContext(opts *RequestContextOpts) *RequestContext {
 	ctx.Pager.CurrentUrl = ctx.Request().URL.Path
 	ctx.Pager.Limit, _ = strconv.ParseInt(cfg.GetF("PAGER_LIMIT", "20"), 10, 64)
 
-	ctx.MetaTags.Title = cfg.Get("SITE_NAME")
-	ctx.MetaTags.Description = cfg.Get("SITE_DESCRIPTION")
-	ctx.MetaTags.ImageURL = cfg.Get("SITE_IMAGE_URL")
-	ctx.MetaTags.SiteName = cfg.Get("SITE_NAME")
-
 	if opts.EchoContext.Request().Method != "GET" {
 		return &ctx
 	}
@@ -123,7 +118,6 @@ type RequestContext struct {
 	Content   template.HTML
 	Query     query_parser_to_db.QueryInterface
 	Pager     *pagination.Pager
-	MetaTags  HTMLMetaTags
 
 	ENV string
 }
@@ -602,60 +596,4 @@ func GetQueryInt64FromReq(param string, c echo.Context) int64 {
 	}
 
 	return valueInt
-}
-
-func (r *RequestContext) RenderMetaTags() template.HTML {
-	app := r.App
-	html := ""
-	pagePath := ""
-
-	// Use the current url as canonical, if the url is a permanent with alias like /content/:id the backed will repply with redirect to the alias
-	if r.MetaTags.Canonical == "" {
-		pathBeforeAlias := r.GetString("pathBeforeAlias")
-		if pathBeforeAlias != "" {
-			pagePath = pathBeforeAlias
-		} else {
-			pagePath = r.EchoContext.Request().URL.Path
-		}
-	} else {
-		pagePath = r.MetaTags.Canonical
-	}
-
-	pageUrl := r.AppOrigin + pagePath
-
-	if pageUrl != "" {
-		html += `<meta property="og:url" content="` + pageUrl + `" />`
-		html += `<link rel="canonical" href="` + pageUrl + `" />`
-	}
-
-	siteName := app.GetConfiguration().Get("SITE_NAME")
-
-	if siteName != "" {
-		html += `<meta property="og:site_name" content="` + siteName + `" />`
-		html += `<meta content="` + siteName + `" itemprop="name">`
-	}
-
-	html += `<meta content="` + siteName + `" name="twitter:site">`
-	html += `<meta property="og:type" content="website" />`
-
-	if r.MetaTags.Description != "" {
-		html += `<meta property="og:description" content="` + r.MetaTags.Description + `" />`
-		html += `<meta name="description" content="` + r.MetaTags.Description + `">`
-		html += `<meta content="` + r.MetaTags.Description + `" name="twitter:description">`
-	}
-
-	if r.MetaTags.Title != "" {
-		html += `<meta content="` + r.MetaTags.Title + `" name="twitter:title">`
-		html += `<meta property="og:title" content="` + r.MetaTags.Title + `" />`
-	}
-
-	if r.MetaTags.ImageURL != "" {
-		html += `<meta property="og:image" content="` + r.MetaTags.ImageURL + `" />`
-	}
-
-	if r.MetaTags.Keywords != "" {
-		html += `<meta name="keywords" content="` + r.MetaTags.Keywords + `" />`
-	}
-
-	return template.HTML(html)
 }

@@ -175,11 +175,6 @@ func (app *AppStruct) NewRequestContext(opts *RequestContextOpts) *RequestContex
 	ctx.Pager.CurrentUrl = ctx.Request().URL.Path
 	ctx.Pager.Limit, _ = strconv.ParseInt(cfg.GetF("PAGER_LIMIT", "20"), 10, 64)
 
-	ctx.MetaTags.Title = cfg.Get("SITE_NAME")
-	ctx.MetaTags.Description = cfg.Get("SITE_DESCRIPTION")
-	ctx.MetaTags.ImageURL = cfg.Get("SITE_IMAGE_URL")
-	ctx.MetaTags.SiteName = cfg.Get("SITE_NAME")
-
 	if opts.EchoContext.Request().Method != "GET" {
 		return &ctx
 	}
