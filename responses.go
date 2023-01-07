@@ -16,3 +16,5 @@ type BaseErrorResponseMessage struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
 }
+
+type EmptyResponse struct{}
