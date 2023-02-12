@@ -502,14 +502,13 @@ func (r *RequestContext) GetBodyClassText() string {
 func (r *RequestContext) GetResponseContentType() string {
 	v := r.GetString("responseContentType")
 	if v == "" {
-		return "text/html" // default ...
+		return r.Request().Header.Get(echo.HeaderContentType) // default ...
 	}
 
 	return v
 }
 
 // Set response type, returns error if the type is invalid
-// TODO! add type validation
 func (r *RequestContext) SetResponseContentType(v string) error {
 	if v == "" {
 		return errors.New("RequestContext.SetResponseContentType value should not be empty")
