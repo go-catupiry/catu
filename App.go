@@ -39,6 +39,9 @@ type App interface {
 	GetPlugin(name string) Pluginer
 	SetPlugin(name string, plugin Pluginer) error
 
+	GetOptions() *AppOptions
+	SetOptions(options *AppOptions) error
+
 	GetRouter() *echo.Echo
 	SetRouterGroup(name, path string) *echo.Group
 	GetRouterGroup(name string) *echo.Group
@@ -84,6 +87,10 @@ type App interface {
 type AppOptions struct {
 	// Gorm configurations / options
 	GormOptions gorm.Option
+	BaseURL     string
+	Port        string
+	Protocol    string
+	Domain      string
 }
 
 type AppStruct struct {
@@ -126,6 +133,10 @@ func (r *AppStruct) RegisterPlugin(p Pluginer) {
 	r.Plugins[p.GetName()] = p
 }
 
+func (r *AppStruct) GetPlugins() map[string]Pluginer {
+	return r.Plugins
+}
+
 func (r *AppStruct) GetPlugin(name string) Pluginer {
 	return r.Plugins[name]
 }
@@ -135,8 +146,13 @@ func (r *AppStruct) SetPlugin(name string, plugin Pluginer) error {
 	return nil
 }
 
-func (r *AppStruct) GetPlugins() map[string]Pluginer {
-	return r.Plugins
+func (r *AppStruct) GetOptions() *AppOptions {
+	return r.Options
+}
+
+func (r *AppStruct) SetOptions(options *AppOptions) error {
+	r.Options = options
+	return nil
 }
 
 func (r *AppStruct) GetRouter() *echo.Echo {
@@ -145,16 +161,10 @@ func (r *AppStruct) GetRouter() *echo.Echo {
 
 func (app *AppStruct) NewRequestContext(opts *RequestContextOpts) *RequestContext {
 	cfg := app.GetConfiguration()
-	port := cfg.GetF("PORT", "8080")
-	protocol := cfg.GetF("PROTOCOL", "http")
-	domain := cfg.GetF("DOMAIN", "localhost")
 
 	ctx := RequestContext{
 		App:         app,
 		EchoContext: opts.EchoContext,
-		Protocol:    protocol,
-		Domain:      domain,
-		AppOrigin:   cfg.GetF("APP_ORIGIN", protocol+"://"+domain+":"+port),
 		// Title:               "",
 		Theme:  cfg.GetF("THEME", "site"),
 		Layout: "layouts/default",
@@ -536,6 +546,22 @@ func (r *AppStruct) Close() error {
 func newApp(options *AppOptions) App {
 	cfg := configuration.NewCfg()
 	logger.Init()
+
+	if options.Port == "" {
+		options.Port = cfg.GetF("PORT", "8080")
+	}
+
+	if options.Protocol == "" {
+		options.Protocol = cfg.GetF("PROTOCOL", "http")
+	}
+
+	if options.Domain == "" {
+		options.Domain = cfg.GetF("DOMAIN", "localhost")
+	}
+
+	if options.BaseURL == "" {
+		options.BaseURL = "http://localhost:8080"
+	}
 
 	app := AppStruct{
 		Options:       options,
