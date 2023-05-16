@@ -27,16 +27,9 @@ type RequestContextOpts struct {
 func NewRequestContext(opts *RequestContextOpts) *RequestContext {
 	app := GetApp()
 	cfg := app.GetConfiguration()
-	port := cfg.GetF("PORT", "8080")
-	protocol := cfg.GetF("PROTOCOL", "http")
-	domain := cfg.GetF("DOMAIN", "localhost")
-
 	ctx := RequestContext{
 		App:         app,
 		EchoContext: opts.EchoContext,
-		Protocol:    protocol,
-		Domain:      domain,
-		AppOrigin:   cfg.GetF("APP_ORIGIN", protocol+"://"+domain+":"+port),
 		// Title:               "",
 		Theme:  app.GetTheme(),
 		Layout: app.GetLayout(),
@@ -99,10 +92,7 @@ type RequestContext struct {
 	EchoContext echo.Context
 	App         App
 
-	Protocol  string
-	Domain    string
-	AppOrigin string
-	Title     string
+	Title string
 
 	IsAuthenticated   bool
 	AuthenticatedUser UserInterface
