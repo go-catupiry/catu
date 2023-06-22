@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 )
@@ -14,20 +15,28 @@ type ResponseMessage struct {
 	Message string `json:"message"`
 }
 
+var (
+	responseMessageKey = "responseMessage"
+)
+
 func SetResponseMessage(c echo.Context, key string, message *ResponseMessage) error {
 	messages, err := GetResponseMessages(c)
 	if err != nil {
 		return err
 	}
 
+	if key == "" {
+		key = uuid.New().String()
+	}
+
 	messages[key] = message
-	c.Set("requestMessages", messages)
+	c.Set(responseMessageKey, messages)
 
 	return nil
 }
 
 func GetResponseMessages(c echo.Context) (map[string]*ResponseMessage, error) {
-	iMessages := c.Get("requestMessages")
+	iMessages := c.Get(responseMessageKey)
 
 	switch ms := iMessages.(type) {
 	case map[string]*ResponseMessage:
