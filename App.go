@@ -51,12 +51,15 @@ type App interface {
 	SetTheme(theme string) error
 	// Get default app layout
 	GetLayout() string
+
 	// Set default app layout
 	SetLayout(layout string) error
 	GetTemplates() *template.Template
+	HasTemplate(name string) bool
 	LoadTemplates() error
 	SetTemplateFunction(name string, f interface{})
 	RenderTemplate(wr io.Writer, name string, data interface{}) error
+	RenderTemplateWithTheme(wr io.Writer, theme string, name string, data interface{}) error
 
 	InitDatabase(name, engine string, isDefault bool) error
 	SetModel(name string, f interface{})
@@ -243,6 +246,14 @@ func (r *AppStruct) GetTemplates() *template.Template {
 	return r.templates
 }
 
+func (r *AppStruct) HasTemplate(name string) bool {
+	if r.templates.Lookup(name) == nil {
+		return false
+	}
+
+	return true
+}
+
 func (r *AppStruct) GetEvents() *event.Manager {
 	return r.Events
 }
@@ -427,6 +438,14 @@ func (r *AppStruct) SetTemplateFunction(name string, f interface{}) {
 // RenderTemplate - Render template with default app theme
 func (app *AppStruct) RenderTemplate(wr io.Writer, name string, data interface{}) error {
 	return app.GetTemplates().ExecuteTemplate(wr, path.Join(app.Theme, name), data)
+}
+
+func (app *AppStruct) RenderTemplateWithTheme(wr io.Writer, theme string, name string, data interface{}) error {
+	if theme == "" {
+		theme = app.Theme
+	}
+
+	return app.GetTemplates().ExecuteTemplate(wr, path.Join(theme, name), data)
 }
 
 func (r *AppStruct) Can(permission string, userRoles []string) bool {

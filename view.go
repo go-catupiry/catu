@@ -227,3 +227,11 @@ func renderPager(ctx *RequestContext, r *pagination.Pager, queryString string) t
 
 	return template.HTML(htmlBuffer.String())
 }
+
+func GetTheme(c echo.Context) string {
+	return c.Get("theme").(string)
+}
+
+func SetTheme(c echo.Context, theme string) {
+	c.Set("theme", theme)
+}
